@@ -112,21 +112,26 @@ dev/rename/
 
 ## 🚀 快速開始
 
-### 📖 推薦：先閱讀使用指南
-
-對於所有用戶（特別是非技術人員），建議先閱讀詳細的使用指南：
+### 📱 最簡單的方式：使用 GUI（推薦👍）
 
 ```bash
-cat 使用指南.md
+cd /Users/hsiaojohnny/dev/rename
+bash scripts/gui.sh
 ```
 
-**使用指南涵蓋：**
-- ⚡ 30 秒快速開始
-- 📱 三種使用方式
-- 🎯 常見情況指南
-- ❌ 遇到問題怎麼辦
-- 📊 理解結果
-- 🔄 重複運行和進階使用
+**然後：**
+1. 點擊「🗂️ 瀏覽資料夾...」選擇要命名的資料夾
+2. 根據需要勾選選項（強制重新命名、刪除原檔案）
+3. 點擊「🚀 開始命名」
+4. 等待完成（進度會在下方顯示）
+
+✨ **完全圖形化！不需要任何命令行知識。**
+
+### 🖥️ 其他使用方式
+
+詳見 [使用指南.md](./docs/使用指南.md)：
+- 互動式 Bash 腳本：`bash scripts/interactive_rename.sh`
+- Python 直接調用：`python3 src/full_batch_rename_execute.py --target-dir <path>`
 
 ---
 
