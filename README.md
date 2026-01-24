@@ -110,6 +110,44 @@ dev/rename/
 
 ---
 
+## 📢 最新更新 (v1.1.3)
+
+### 🔧 修復和改進
+
+#### 1. 代碼錯誤修復
+- **問題**：`SESSION_DIR` 變數未定義，導致無法執行批量命名
+- **修復**：添加 `SESSION_DIR = DATA_DIR / "session"` 定義
+- **位置**：`src/full_batch_rename_execute.py` 第 33 行
+- **驗證**：已通過命令行測試，可正常執行
+
+#### 2. GUI 可讀性改進
+根據 **Context7 tkinter 最佳實踐** 改進用戶介面：
+- **標題字體**：20px → 28px（提高視覺層級）
+- **標籤字體**：9px → 14px（改善可讀性）
+- **按鈕字體**：10-12px → 13-14px（符合可訪問性標準）
+- **文本框字體**：9pt → 12pt（便於閱讀）
+- **內邊距（Padding）**：增加到 15-20px（符合現代 GUI 規範）
+- **行高和間距**：優化垂直間距，提高視覺舒適度
+
+**改進成果**：
+✅ 字體清晰可讀  
+✅ 符合無障礙設計標準  
+✅ 現代化外觀  
+✅ 用戶體驗友善
+
+#### 3. 技術決策說明
+**為什麼選擇 Context7 tkinter 最佳實踐？**
+- 基於官方文檔和廣泛的開發實踐
+- 確保跨平台一致性（macOS, Linux, Windows）
+- 提高應用的可維護性和可擴展性
+- 符合無障礙設計（WCAG）標準
+
+**參考文檔**：
+- [Context7: tkinter-docs](https://context7.com/rdbende/tkinter-docs)
+- [Context7: CustomTkinter Font Sizing](https://context7.com/tomschimansky/customtkinter)
+
+---
+
 ## 🚀 快速開始
 
 ### 📱 最簡單的方式：使用 GUI（推薦👍）

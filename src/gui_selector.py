@@ -45,7 +45,7 @@ class ImageRenamerGUI:
         self.build_ui()
         
     def setup_styles(self):
-        """設置樣式 - 暗色主題"""
+        """設置樣式 - 暗色主題，可讀性優化"""
         self.root.configure(bg="#2d2d2d")
         
         # 顏色方案
@@ -59,17 +59,26 @@ class ImageRenamerGUI:
         self.success_color = "#51cf66"         # 成功文字（綠色）
         self.info_color = "#74c0fc"            # 信息文字（藍色）
         
+        # 字體定義（基於 Context7 tkinter 最佳實踐）
+        self.title_font = ("Arial", 28, "bold")      # 大標題：28px
+        self.subtitle_font = ("Arial", 14)           # 副標題：14px
+        self.label_font = ("Arial", 14)              # 標籤：14px
+        self.button_font = ("Arial", 14, "bold")     # 按鈕：14px
+        self.checkbox_font = ("Arial", 13)           # 複選框：13px
+        self.help_font = ("Arial", 12, "italic")     # 幫助文字：12px
+        self.text_font = ("Courier", 12)             # 文本框：12px
+        
     def build_ui(self):
         """構建用戶介面"""
         
         # 標題
         title_frame = tk.Frame(self.root, bg=self.bg_color)
-        title_frame.pack(fill=tk.X, padx=20, pady=15)
+        title_frame.pack(fill=tk.X, padx=20, pady=20)
         
         title = tk.Label(
             title_frame,
             text="📸 圖片智能命名系統",
-            font=("Arial", 20, "bold"),
+            font=self.title_font,
             bg=self.bg_color,
             fg=self.fg_color
         )
@@ -78,11 +87,11 @@ class ImageRenamerGUI:
         subtitle = tk.Label(
             title_frame,
             text="使用 Qwen3-VL 視覺分析 + 精準 AI 命名",
-            font=("Arial", 10),
+            font=self.subtitle_font,
             bg=self.bg_color,
             fg="#999999"
         )
-        subtitle.pack(anchor=tk.W)
+        subtitle.pack(anchor=tk.W, pady=(5, 0))
         
         # 資料夾選擇部分
         self.build_folder_section()
@@ -101,15 +110,15 @@ class ImageRenamerGUI:
         folder_frame = tk.LabelFrame(
             self.root,
             text="📁 步驟 1：選擇要命名的資料夾",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 14, "bold"),
             bg=self.bg_color,
             fg=self.fg_color,
             padx=15,
-            pady=10,
+            pady=15,
             bd=1,
             relief=tk.FLAT
         )
-        folder_frame.pack(fill=tk.X, padx=20, pady=10)
+        folder_frame.pack(fill=tk.X, padx=20, pady=15)
         
         # 顯示選擇的資料夾
         selected_frame = tk.Frame(folder_frame, bg=self.text_bg, relief=tk.SUNKEN, bd=1)
@@ -118,21 +127,21 @@ class ImageRenamerGUI:
         tk.Label(
             selected_frame,
             text="選擇的資料夾：",
-            font=("Arial", 9),
+            font=("Arial", 12),
             bg=self.text_bg,
             fg="#999999"
-        ).pack(anchor=tk.W, padx=10, pady=5)
+        ).pack(anchor=tk.W, padx=10, pady=(8, 3))
         
         folder_label = tk.Label(
             selected_frame,
             textvariable=self.selected_dir,
-            font=("Courier", 9),
+            font=self.text_font,
             bg=self.text_bg,
             fg=self.info_color,
             wraplength=500,
             justify=tk.LEFT
         )
-        folder_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
+        folder_label.pack(anchor=tk.W, padx=10, pady=(0, 8))
         
         # 選擇按鈕
         button_frame = tk.Frame(folder_frame, bg=self.bg_color)
@@ -142,11 +151,11 @@ class ImageRenamerGUI:
             button_frame,
             text="🗂️ 瀏覽資料夾...",
             command=self.select_folder,
-            font=("Arial", 10),
+            font=self.button_font,
             bg=self.button_color,
             fg="white",
-            padx=15,
-            pady=8,
+            padx=20,
+            pady=10,
             cursor="hand2",
             activebackground=self.button_hover,
             relief=tk.RAISED,
@@ -158,26 +167,26 @@ class ImageRenamerGUI:
         help_text = tk.Label(
             folder_frame,
             text="💡 提示：可以選擇任何資料夾，程式會自動掃描子資料夾中的所有圖片",
-            font=("Arial", 9, "italic"),
+            font=self.help_font,
             bg=self.bg_color,
             fg="#999999"
         )
-        help_text.pack(anchor=tk.W, pady=5)
+        help_text.pack(anchor=tk.W, pady=(10, 0))
         
     def build_options_section(self):
         """構建選項部分"""
         options_frame = tk.LabelFrame(
             self.root,
             text="⚙️ 步驟 2：選擇執行選項",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 14, "bold"),
             bg=self.bg_color,
             fg=self.fg_color,
             padx=15,
-            pady=10,
+            pady=15,
             bd=1,
             relief=tk.FLAT
         )
-        options_frame.pack(fill=tk.X, padx=20, pady=10)
+        options_frame.pack(fill=tk.X, padx=20, pady=15)
         
         # 強制重新命名
         self.force_rename_var = tk.BooleanVar(value=False)
@@ -185,7 +194,7 @@ class ImageRenamerGUI:
             options_frame,
             text="🔄 強制重新命名（重新分析所有檔案，包括已命名的）",
             variable=self.force_rename_var,
-            font=("Arial", 10),
+            font=self.checkbox_font,
             bg=self.bg_color,
             fg=self.fg_color,
             activebackground=self.bg_color,
@@ -193,7 +202,7 @@ class ImageRenamerGUI:
             selectcolor=self.text_bg,
             cursor="hand2"
         )
-        force_checkbox.pack(anchor=tk.W, pady=5)
+        force_checkbox.pack(anchor=tk.W, pady=8)
         
         # 刪除原檔案
         self.delete_original_var = tk.BooleanVar(value=False)
@@ -201,7 +210,7 @@ class ImageRenamerGUI:
             options_frame,
             text="🗑️ 刪除原檔案（保留重命名後的檔案，刪除命名前的檔案）",
             variable=self.delete_original_var,
-            font=("Arial", 10),
+            font=self.checkbox_font,
             bg=self.bg_color,
             fg=self.error_color,
             activebackground=self.bg_color,
@@ -209,32 +218,32 @@ class ImageRenamerGUI:
             selectcolor=self.text_bg,
             cursor="hand2"
         )
-        delete_checkbox.pack(anchor=tk.W, pady=5)
+        delete_checkbox.pack(anchor=tk.W, pady=8)
         
         # 警告文字
         warning_text = tk.Label(
             options_frame,
             text="⚠️ 注意：刪除原檔案操作無法復原！",
-            font=("Arial", 9, "italic"),
+            font=self.help_font,
             bg=self.bg_color,
             fg=self.error_color
         )
-        warning_text.pack(anchor=tk.W, pady=5)
+        warning_text.pack(anchor=tk.W, pady=(8, 0))
         
     def build_button_section(self):
         """構建按鈕部分"""
         button_frame = tk.Frame(self.root, bg=self.bg_color)
-        button_frame.pack(fill=tk.X, padx=20, pady=15)
+        button_frame.pack(fill=tk.X, padx=20, pady=20)
         
         start_btn = tk.Button(
             button_frame,
             text="🚀 開始命名",
             command=self.start_renaming,
-            font=("Arial", 12, "bold"),
+            font=self.button_font,
             bg="#27ae60",
             fg="white",
-            padx=30,
-            pady=12,
+            padx=35,
+            pady=14,
             cursor="hand2",
             activebackground="#229954",
             relief=tk.RAISED,
@@ -246,11 +255,11 @@ class ImageRenamerGUI:
             button_frame,
             text="🔄 清空",
             command=self.clear_selection,
-            font=("Arial", 10),
+            font=("Arial", 13),
             bg="#5a6c7d",
             fg="white",
-            padx=15,
-            pady=8,
+            padx=20,
+            pady=12,
             cursor="hand2",
             activebackground="#4a5c6d",
             relief=tk.RAISED,
@@ -262,11 +271,11 @@ class ImageRenamerGUI:
             button_frame,
             text="❌ 關閉",
             command=self.root.quit,
-            font=("Arial", 10),
+            font=("Arial", 13),
             bg="#e74c3c",
             fg="white",
-            padx=15,
-            pady=8,
+            padx=20,
+            pady=12,
             cursor="hand2",
             activebackground="#c0392b",
             relief=tk.RAISED,
@@ -279,21 +288,21 @@ class ImageRenamerGUI:
         result_frame = tk.LabelFrame(
             self.root,
             text="📊 執行結果",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 14, "bold"),
             bg=self.bg_color,
             fg=self.fg_color,
-            padx=10,
-            pady=10,
+            padx=15,
+            pady=15,
             bd=1,
             relief=tk.FLAT
         )
-        result_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        result_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=15)
         
         # 結果文本框
         self.result_text = scrolledtext.ScrolledText(
             result_frame,
             height=10,
-            font=("Courier", 9),
+            font=self.text_font,
             bg=self.text_bg,
             fg=self.text_fg,
             wrap=tk.WORD,

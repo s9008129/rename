@@ -30,6 +30,7 @@ import sys
 PROJECT_ROOT = Path(__file__).parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 LOGS_DIR = PROJECT_ROOT / "logs"
+SESSION_DIR = DATA_DIR / "session"
 
 LM_STUDIO_API = "http://127.0.0.1:1234/v1/chat/completions"
 BATCH_SIZE = 10  # 每批 10 張圖片
@@ -37,6 +38,7 @@ BATCH_SIZE = 10  # 每批 10 張圖片
 # 確保必要的目錄存在
 DATA_DIR.mkdir(exist_ok=True)
 LOGS_DIR.mkdir(exist_ok=True)
+SESSION_DIR.mkdir(exist_ok=True)
 
 # 解析命令行參數
 parser = argparse.ArgumentParser(
