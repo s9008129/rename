@@ -1,0 +1,347 @@
+#!/usr/bin/env python3
+"""
+完整執行：使用 Qwen3-VL 進行全量 342 張圖片分析和精準重命名
+
+流程：
+1. 分析全部 342 張圖片
+2. 生成精準命名對照表
+3. 執行檔案重命名
+4. 生成詳細報告
+"""
+
+import os
+import json
+import base64
+import requests
+from pathlib import Path
+from typing import Dict, List, Optional
+import time
+from datetime import datetime
+
+# 配置
+DOWNLOADS_DIR = Path("/Users/hsiaojohnny/Downloads")
+SESSION_DIR = Path("/Users/hsiaojohnny/.copilot/session-state/0627c76d-21e0-4128-b7ff-ea283b16e7d2")
+LM_STUDIO_API = "http://127.0.0.1:1234/v1/chat/completions"
+BATCH_SIZE = 10  # 每批 10 張圖片
+
+print("=" * 80)
+print("🚀 第二步：全量執行 342 張圖片的 Qwen3-VL 分析和重命名")
+print("=" * 80)
+print(f"時間：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print()
+
+# 掃描所有圖片
+image_files = sorted([
+    f for f in DOWNLOADS_DIR.glob("*") 
+    if f.is_file() and f.suffix.lower() in {'.png', '.jpg', '.jpeg', '.webp', '.gif'}
+])
+
+print(f"📊 掃描結果：總圖片數 = {len(image_files)}")
+print(f"   批次大小：{BATCH_SIZE} 張/批")
+print(f"   預計批次數：{(len(image_files) + BATCH_SIZE - 1) // BATCH_SIZE}")
+print()
+
+# 分析結果儲存
+analysis_results = []
+failed_files = []
+skipped_duplicates = []
+
+def encode_image_to_base64(image_path: Path) -> str:
+    """將圖片編碼為 base64"""
+    with open(image_path, "rb") as f:
+        return base64.b64encode(f.read()).decode('utf-8')
+
+def get_image_media_type(image_path: Path) -> str:
+    """根據副檔名確定 MIME 類型"""
+    ext = image_path.suffix.lower()
+    return {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.gif': 'image/gif'
+    }.get(ext, 'image/png')
+
+def analyze_image_with_qwen(image_path: Path, retry_count: int = 3) -> Dict:
+    """使用 Qwen3-VL 分析單張圖片（含重試機制）"""
+    
+    for attempt in range(retry_count):
+        try:
+            # 編碼圖片
+            image_base64 = encode_image_to_base64(image_path)
+            media_type = get_image_media_type(image_path)
+            
+            # 準備分析提示
+            analysis_prompt = """請深度分析這張圖片並用台灣繁體中文回答。返回 JSON 格式的結果（只返回 JSON，不要其他文字）：
+
+{
+  "image_title": "圖片中的標題文字（如無標題則為 'N/A'）",
+  "main_theme": "核心主題分類（如：財經、技術、設計、報告等）",
+  "sub_theme": "子分類（如：投資分析、AI系統、創意設計等）",
+  "core_content": "圖片的具體核心內容（關鍵詞或短句，20字以內）",
+  "recommended_name": "推薦命名（格式：主題_子主題_具體標題，最多25字，不含日期）"
+}"""
+            
+            # 調用 LM Studio API
+            headers = {"Content-Type": "application/json"}
+            
+            payload = {
+                "model": "qwen/qwen3-vl-30b",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{media_type};base64,{image_base64}"
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": analysis_prompt
+                            }
+                        ]
+                    }
+                ],
+                "temperature": 0.3,
+                "max_tokens": 500
+            }
+            
+            response = requests.post(LM_STUDIO_API, json=payload, headers=headers, timeout=60)
+            response.raise_for_status()
+            
+            # 解析回應
+            result = response.json()
+            analysis_text = result['choices'][0]['message']['content']
+            
+            # 提取 JSON
+            try:
+                analysis_json = json.loads(analysis_text)
+            except json.JSONDecodeError:
+                import re
+                json_match = re.search(r'\{.*\}', analysis_text, re.DOTALL)
+                if json_match:
+                    analysis_json = json.loads(json_match.group())
+                else:
+                    raise ValueError(f"無法解析回應")
+            
+            return {
+                "filename": image_path.name,
+                "status": "success",
+                "analysis": analysis_json
+            }
+        
+        except Exception as e:
+            if attempt < retry_count - 1:
+                time.sleep(2)  # 重試前等待
+                continue
+            else:
+                return {
+                    "filename": image_path.name,
+                    "status": "error",
+                    "error": str(e)
+                }
+
+# 加載之前的結果（如果有）
+previous_results_file = SESSION_DIR / "qwen_vision_analysis_sample.json"
+if previous_results_file.exists():
+    print("📂 加載之前的樣本分析結果...")
+    with open(previous_results_file, 'r', encoding='utf-8') as f:
+        previous = json.load(f)
+        analysis_results = previous.get('detailed_results', [])
+    print(f"   已加載 {len(analysis_results)} 個結果")
+    processed_files = {r['filename'] for r in analysis_results}
+    remaining_files = [f for f in image_files if f.name not in processed_files]
+    print(f"   剩餘待分析：{len(remaining_files)} 張")
+    print()
+else:
+    remaining_files = image_files
+    processed_files = set()
+
+# 批量處理圖片
+print("🚀 開始全量分析...")
+print()
+
+total_processed = len(analysis_results)
+successful = sum(1 for r in analysis_results if r['status'] == 'success')
+failed = sum(1 for r in analysis_results if r['status'] != 'success')
+
+for batch_idx in range((len(remaining_files) + BATCH_SIZE - 1) // BATCH_SIZE):
+    start_idx = batch_idx * BATCH_SIZE
+    end_idx = min(start_idx + BATCH_SIZE, len(remaining_files))
+    
+    batch_files = remaining_files[start_idx:end_idx]
+    batch_num = len(analysis_results) // BATCH_SIZE + batch_idx + 1
+    
+    print(f"📦 Batch {batch_num} ({len(batch_files)} 張 | 進度：{total_processed + len(batch_files)}/{len(image_files)})")
+    
+    for img_idx, img_file in enumerate(batch_files, 1):
+        print(f"   [{img_idx}/{len(batch_files)}] {img_file.name[:45]}... ", end="", flush=True)
+        
+        result = analyze_image_with_qwen(img_file)
+        analysis_results.append(result)
+        total_processed += 1
+        
+        if result['status'] == 'success':
+            successful += 1
+            print(f"✅")
+        else:
+            failed += 1
+            failed_files.append(result)
+            print(f"❌")
+        
+        # 稍作延遲
+        time.sleep(0.5)
+    
+    print()
+    
+    # 每批後保存一次（以防中斷）
+    temp_file = SESSION_DIR / f"qwen_analysis_progress.json"
+    with open(temp_file, 'w', encoding='utf-8') as f:
+        json.dump({
+            "metadata": {
+                "timestamp": datetime.now().isoformat(),
+                "total_processed": total_processed,
+                "successful": successful,
+                "failed": failed,
+            },
+            "results": analysis_results
+        }, f, ensure_ascii=False, indent=2)
+
+print("=" * 80)
+print(f"✨ 分析完成：{datetime.now().strftime('%H:%M:%S')}")
+print("=" * 80)
+print(f"總計：{total_processed} 張圖片")
+print(f"成功：{successful} 張 ✅")
+print(f"失敗：{failed} 張 ❌")
+print()
+
+# 保存完整分析結果
+with open(SESSION_DIR / "qwen_vision_analysis_complete.json", "w", encoding="utf-8") as f:
+    json.dump({
+        "metadata": {
+            "timestamp": datetime.now().isoformat(),
+            "total_analyzed": total_processed,
+            "successful": successful,
+            "failed": failed,
+            "api_endpoint": LM_STUDIO_API,
+            "model": "qwen/qwen3-vl-30b"
+        },
+        "detailed_results": analysis_results
+    }, f, ensure_ascii=False, indent=2)
+
+print(f"💾 完整分析結果已保存：")
+print(f"   {SESSION_DIR / 'qwen_vision_analysis_complete.json'}")
+print()
+
+# 生成命名對照表和重命名計畫
+print("�� 生成重命名對照表...")
+
+rename_plan = []
+for result in analysis_results:
+    if result['status'] == 'success':
+        old_name = result['filename']
+        analysis = result['analysis']
+        new_name = analysis.get('recommended_name', 'UNKNOWN')
+        
+        # 確保新名稱有副檔名
+        old_path = DOWNLOADS_DIR / old_name
+        ext = old_path.suffix
+        if not new_name.endswith(ext):
+            new_name = new_name + ext
+        
+        rename_plan.append({
+            "old_filename": old_name,
+            "new_filename": new_name,
+            "image_title": analysis.get('image_title', 'N/A'),
+            "main_theme": analysis.get('main_theme', 'N/A'),
+            "sub_theme": analysis.get('sub_theme', 'N/A'),
+            "core_content": analysis.get('core_content', 'N/A')
+        })
+
+# 檢查重複的新名稱
+name_counts = {}
+for item in rename_plan:
+    new_name = item['new_filename']
+    name_counts[new_name] = name_counts.get(new_name, 0) + 1
+
+duplicates = {k: v for k, v in name_counts.items() if v > 1}
+if duplicates:
+    print(f"⚠️  警告：檢測到 {len(duplicates)} 個重複的新名稱")
+    # 為重複的名稱添加序號
+    new_name_count = {}
+    for item in rename_plan:
+        new_name = item['new_filename']
+        if new_name in duplicates:
+            new_name_count[new_name] = new_name_count.get(new_name, 0) + 1
+            base, ext = new_name.rsplit('.', 1)
+            item['new_filename'] = f"{base}_{new_name_count[new_name]:02d}.{ext}"
+
+# 保存對照表
+with open(SESSION_DIR / "qwen_rename_plan_complete.json", "w", encoding="utf-8") as f:
+    json.dump(rename_plan, f, ensure_ascii=False, indent=2)
+
+print(f"✅ 已為 {len(rename_plan)} 個文件生成新名稱")
+print(f"📊 對照表已保存：{SESSION_DIR / 'qwen_rename_plan_complete.json'}")
+print()
+
+# 執行重命名
+print("🔄 開始執行重命名...")
+print()
+
+renamed_count = 0
+rename_errors = []
+
+for item in rename_plan:
+    old_path = DOWNLOADS_DIR / item['old_filename']
+    new_path = DOWNLOADS_DIR / item['new_filename']
+    
+    try:
+        if old_path.exists():
+            if new_path.exists() and new_path != old_path:
+                # 避免覆蓋現有檔案
+                base, ext = new_path.name.rsplit('.', 1)
+                counter = 1
+                while new_path.exists():
+                    new_path = DOWNLOADS_DIR / f"{base}_{counter:02d}.{ext}"
+                    counter += 1
+                item['new_filename'] = new_path.name
+            
+            old_path.rename(new_path)
+            renamed_count += 1
+            print(f"✅ {item['old_filename'][:40]:<40} → {new_path.name[:35]}")
+    
+    except Exception as e:
+        rename_errors.append({
+            "old": item['old_filename'],
+            "new": item['new_filename'],
+            "error": str(e)
+        })
+        print(f"❌ {item['old_filename'][:40]:<40} (錯誤：{str(e)[:30]})")
+
+print()
+print("=" * 80)
+print(f"✨ 重命名完成")
+print("=" * 80)
+print(f"成功重命名：{renamed_count} 張")
+print(f"重命名失敗：{len(rename_errors)} 張")
+print()
+
+# 保存最終報告
+final_report = {
+    "timestamp": datetime.now().isoformat(),
+    "total_images": len(image_files),
+    "analyzed": total_processed,
+    "successful_analysis": successful,
+    "failed_analysis": failed,
+    "renamed": renamed_count,
+    "rename_errors": len(rename_errors),
+    "errors": rename_errors if rename_errors else []
+}
+
+with open(SESSION_DIR / "qwen_rename_final_report.json", "w", encoding="utf-8") as f:
+    json.dump(final_report, f, ensure_ascii=False, indent=2)
+
+print(f"📝 最終報告已保存：{SESSION_DIR / 'qwen_rename_final_report.json'}")
+

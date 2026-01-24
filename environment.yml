@@ -1,0 +1,21 @@
+name: image-rename
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pillow
+  - requests
+  - pyyaml
+  - tqdm
+  - pip:
+    - openai  # For LM Studio API compatibility
+    - python-dotenv
+    - pydantic
+
+# Usage:
+# conda env create -f environment.yml
+# conda activate image-rename
+# python src/full_batch_rename_execute.py

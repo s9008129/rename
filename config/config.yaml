@@ -1,0 +1,43 @@
+# Image Title-First Naming System - Conda Configuration
+
+# 本地 LM Studio API 配置
+lm_studio:
+  host: "127.0.0.1"
+  port: 1234
+  model: "qwen/qwen3-vl-30b"
+  timeout: 300
+
+# 分析參數
+analysis:
+  batch_size: 10
+  max_retries: 3
+  retry_delay: 2
+  save_progress: true
+
+# 輸出配置
+output:
+  save_analysis: true
+  save_mapping: true
+  output_dir: "./data/analysis_results"
+  mapping_dir: "./data/mapping"
+
+# 命名規則
+naming:
+  priority_field: "image_title"
+  fallback_field: "recommended_name"
+  separator: "_"
+  language: "zh-TW"
+  duplicate_suffix: "_{number:02d}"
+
+# 驗證設定
+validation:
+  check_duplicates: true
+  check_encoding: true
+  max_filename_length: 255
+  valid_extensions: [".png", ".jpg", ".jpeg", ".gif"]
+
+# 日誌設定
+logging:
+  level: "INFO"
+  format: "[%(asctime)s] %(levelname)s: %(message)s"
+  file: "./logs/rename.log"

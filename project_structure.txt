@@ -1,0 +1,53 @@
+# Image Title-First Naming System 項目結構
+
+dev/rename/
+├── .github/
+│   └── copilot-instructions.md          # Copilot 指導原則
+├── src/
+│   ├── full_batch_rename_execute.py     # 主要分析和重命名腳本
+│   ├── deduplicate_and_cleanup.py       # 重複清理腳本
+│   └── utilities.py                     # 通用工具函數
+├── config/
+│   ├── config.yaml                      # 配置檔案（本地模型設定）
+│   └── environments.yml                 # Conda 環境配置
+├── data/
+│   ├── analysis_results/                # 分析結果輸出
+│   ├── mapping/                         # 新舊檔名映射表
+│   └── samples/                         # 示例圖片和結果
+├── docs/
+│   ├── README.md                        # 項目概述
+│   ├── ARCHITECTURE.md                  # 技術架構
+│   ├── API.md                           # API 文檔
+│   ├── FIRST_PRINCIPLES.md              # 第一性原理分析
+│   └── EXAMPLES.md                      # 使用案例
+├── tests/
+│   ├── test_analysis.py                 # 分析功能測試
+│   └── test_utilities.py                # 工具函數測試
+├── scripts/
+│   ├── setup.sh                         # 環境設置腳本
+│   └── run_analysis.sh                  # 執行分析腳本
+├── logs/
+│   └── .gitkeep
+├── .gitignore
+├── README.md                            # 根級別說明（詳細版）
+├── requirements.txt                     # Python 依賴
+├── environment.yml                      # Conda 環境配置
+└── copilot-instructions.md              # 項目級 Copilot 指導
+
+## 關鍵檔案說明
+
+### 核心腳本
+- full_batch_rename_execute.py: 使用 Qwen3-VL 30B 進行批量圖片分析
+- deduplicate_and_cleanup.py: 檢測和刪除重複檔案
+
+### 配置檔案
+- environment.yml: Conda 環境定義（包含 Python 版本、LM Studio API 連接）
+- config.yaml: 模型參數、API 端點、處理選項
+
+### 文檔
+- copilot-instructions.md: AI 助手的指導原則和最佳實踐
+- ARCHITECTURE.md: 系統設計、資料流、技術棧
+- FIRST_PRINCIPLES.md: 項目設計哲學和核心概念
+
+### 資料流
+Images → Analysis (Qwen3-VL) → JSON Results → Rename → Validation → Mapping Table

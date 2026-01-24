@@ -1,0 +1,49 @@
+# .gitignore - Image Title-First Naming System
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project-specific
+data/analysis_results/
+data/mapping/*.json
+logs/
+*.log
+.env
+config/local.yaml
+
+# Large files
+*.zip
+*.tar.gz
+data/samples/*.png
+data/samples/*.jpg
+data/samples/*.jpeg
+
+# Conda
+conda-meta/
+pkgs/
