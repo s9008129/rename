@@ -36,9 +36,9 @@ LM_STUDIO_API = "http://127.0.0.1:1234/v1/chat/completions"
 BATCH_SIZE = 10  # 每批 10 張圖片
 
 # 確保必要的目錄存在
-DATA_DIR.mkdir(exist_ok=True)
-LOGS_DIR.mkdir(exist_ok=True)
-SESSION_DIR.mkdir(exist_ok=True)
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+SESSION_DIR.mkdir(parents=True, exist_ok=True)
 
 # 解析命令行參數
 parser = argparse.ArgumentParser(
@@ -199,7 +199,7 @@ def analyze_image_with_qwen(image_path: Path, retry_count: int = 3) -> Dict:
                     raise ValueError(f"無法解析回應")
             
             return {
-                "filename": image_path.name,
+                "filename": str(image_path.relative_to(TARGET_DIR)),
                 "status": "success",
                 "analysis": analysis_json
             }
@@ -210,7 +210,7 @@ def analyze_image_with_qwen(image_path: Path, retry_count: int = 3) -> Dict:
                 continue
             else:
                 return {
-                    "filename": image_path.name,
+                    "filename": str(image_path.relative_to(TARGET_DIR)),
                     "status": "error",
                     "error": str(e)
                 }
