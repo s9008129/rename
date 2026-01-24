@@ -36,10 +36,10 @@ print("=" * 70)
 print(f"掃描目錄：{downloads_dir}")
 print()
 
-# 掃描所有圖片
+# 掃描所有圖片（遞迴掃描所有子資料夾）
 image_files = []
-for file_path in sorted(downloads_dir.glob("*")):
-    if file_path.is_file() and file_path.suffix.lower() in {'.png', '.jpg', '.jpeg', '.webp', '.gif'}:
+for file_path in sorted(downloads_dir.rglob("*")):
+    if file_path.is_file() and file_path.suffix.lower() in {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'}:
         image_files.append(file_path)
 
 print(f"📋 掃描完成：{len(image_files)} 個圖片檔案")

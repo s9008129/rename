@@ -81,10 +81,10 @@ def is_already_renamed(filename: str) -> bool:
     import re
     return bool(re.search(r'[\u4e00-\u9fff]', filename))
 
-# 掃描所有圖片
+# 掃描所有圖片（遞迴掃描所有子資料夾）
 image_files = sorted([
-    f for f in TARGET_DIR.glob("*") 
-    if f.is_file() and f.suffix.lower() in {'.png', '.jpg', '.jpeg', '.webp', '.gif'}
+    f for f in TARGET_DIR.rglob("*") 
+    if f.is_file() and f.suffix.lower() in {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'}
 ])
 
 print(f"📊 掃描結果：找到 {len(image_files)} 個圖片檔案")
