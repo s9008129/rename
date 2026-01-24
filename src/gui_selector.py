@@ -45,16 +45,16 @@ class ImageRenamerGUI:
         self.build_ui()
         
     def setup_styles(self):
-        """設置樣式 - 暗色主題，可讀性優化"""
-        self.root.configure(bg="#2d2d2d")
+        """設置樣式 - 暗藍色主題，高對比度可讀性優化"""
+        self.root.configure(bg="#1a3a52")
         
-        # 顏色方案
-        self.bg_color = "#2d2d2d"              # 深灰色背景
-        self.fg_color = "#e0e0e0"              # 淺灰色文字
+        # 顏色方案：暗藍色系，提高文字可讀性
+        self.bg_color = "#1a3a52"              # 暗藍色背景
+        self.fg_color = "#e8f4f8"              # 淺藍白色文字
         self.button_color = "#4CAF50"          # 綠色按鈕
         self.button_hover = "#45a049"          # 按鈕懸停色
-        self.text_bg = "#1e1e1e"               # 文本框背景（更深）
-        self.text_fg = "#e8e8e8"               # 文本框文字（更亮）
+        self.text_bg = "#0d1f2d"               # 文本框背景（更深藍色）
+        self.text_fg = "#c8e6f5"               # 文本框文字（淺藍白色，高對比）
         self.error_color = "#ff6b6b"           # 錯誤文字（紅色）
         self.success_color = "#51cf66"         # 成功文字（綠色）
         self.info_color = "#74c0fc"            # 信息文字（藍色）

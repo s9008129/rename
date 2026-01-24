@@ -59,9 +59,16 @@ parser.add_argument(
     default=None,
     help="指定要處理的目錄（默認：使用交互式提示輸入）"
 )
+parser.add_argument(
+    "--limit",
+    type=int,
+    default=None,
+    help="限制處理的圖片數量（用於測試，默認：無限制）"
+)
 args = parser.parse_args()
 
 FORCE_RENAME = args.force_rename
+LIMIT_IMAGES = args.limit  # 新增：限制圖片數量
 
 # 如果沒有指定目錄，使用交互式輸入或當前目錄
 if args.target_dir:
@@ -95,7 +102,15 @@ image_files = sorted([
     if f.is_file() and f.suffix.lower() in {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'}
 ])
 
-print(f"📊 掃描結果：找到 {len(image_files)} 個圖片檔案")
+# 應用限制（用於測試）
+if LIMIT_IMAGES:
+    image_files = image_files[:LIMIT_IMAGES]
+
+print(f"📊 掃描結果：找到 {len(image_files)} 個圖片檔案", end="")
+if LIMIT_IMAGES:
+    print(f"（已限制為 {LIMIT_IMAGES} 張用於測試）")
+else:
+    print()
 
 # 檢測已命名和未命名的檔案
 if not FORCE_RENAME:
