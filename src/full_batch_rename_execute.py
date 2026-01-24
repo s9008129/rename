@@ -25,6 +25,9 @@ from datetime import datetime
 import argparse
 import sys
 
+# 導入進度追蹤器
+from progress_tracker import ProgressTracker
+
 # 配置
 # 使用相對路徑：PROJECT_ROOT 應該是執行腳本的目錄
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -68,7 +71,7 @@ else:
     TARGET_DIR = Path.cwd()
 
 print("=" * 80)
-print("🚀 圖片智能命名系統 - Qwen3-VL 批量分析和重命名")
+print("🚀 圖片智能命名系統 - Qwen3-VL 批量分析和重命名 v1.2")
 print("=" * 80)
 print(f"時間：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print(f"目標目錄：{TARGET_DIR}")
@@ -77,6 +80,9 @@ if FORCE_RENAME:
 else:
     print("📌 模式：增量模式（將跳過已命名的檔案）")
 print()
+
+# 初始化進度追蹤器
+progress = ProgressTracker(SESSION_DIR, "rename")
 
 def is_already_renamed(filename: str) -> bool:
     """檢測檔案是否已被命名（檔名包含中文字符）"""
@@ -246,7 +252,8 @@ for batch_idx in range((len(remaining_files) + BATCH_SIZE - 1) // BATCH_SIZE):
     batch_files = remaining_files[start_idx:end_idx]
     batch_num = len(analysis_results) // BATCH_SIZE + batch_idx + 1
     
-    print(f"📦 Batch {batch_num} ({len(batch_files)} 張 | 進度：{total_processed + len(batch_files)}/{len(image_files)})")
+    # 更新進度追蹤
+    progress.update_analysis(batch_num, BATCH_SIZE, total_processed)
     
     for img_idx, img_file in enumerate(batch_files, 1):
         print(f"   [{img_idx}/{len(batch_files)}] {img_file.name[:45]}... ", end="", flush=True)
@@ -288,6 +295,9 @@ print(f"總計：{total_processed} 張圖片")
 print(f"成功：{successful} 張 ✅")
 print(f"失敗：{failed} 張 ❌")
 print()
+
+# 更新進度：完成分析
+progress.complete_analysis(successful, failed)
 
 # 保存完整分析結果
 with open(SESSION_DIR / "qwen_vision_analysis_complete.json", "w", encoding="utf-8") as f:
@@ -362,10 +372,13 @@ print()
 print("🔄 開始執行重命名...")
 print()
 
+# 更新進度：開始重命名
+progress.start_rename()
+
 renamed_count = 0
 rename_errors = []
 
-for item in rename_plan:
+for idx, item in enumerate(rename_plan, 1):
     old_path = TARGET_DIR / item['old_filename']
     new_path = TARGET_DIR / item['new_filename']
     
@@ -383,6 +396,9 @@ for item in rename_plan:
             old_path.rename(new_path)
             renamed_count += 1
             print(f"✅ {item['old_filename'][:40]:<40} → {new_path.name[:35]}")
+            
+            # 更新進度
+            progress.update_rename(idx)
     
     except Exception as e:
         rename_errors.append({
@@ -396,6 +412,9 @@ print()
 print("=" * 80)
 print(f"✨ 重命名完成")
 print("=" * 80)
+
+# 更新進度：完成重命名
+progress.complete_rename(renamed_count, len(rename_errors))
 print(f"成功重命名：{renamed_count} 張")
 print(f"重命名失敗：{len(rename_errors)} 張")
 print()

@@ -460,7 +460,7 @@ class ImageRenamerGUI:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=3600  # 1小時超時
+                timeout=86400  # 24 小時超時（支持大量圖片）
             )
             
             # 顯示輸出
@@ -494,7 +494,7 @@ class ImageRenamerGUI:
                 self.log("\n❌ 執行失敗（返回碼：{}）\n".format(result.returncode), "error")
         
         except subprocess.TimeoutExpired:
-            self.log("\n❌ 執行超時（超過 1 小時）\n", "error")
+            self.log("\n❌ 執行超時（超過 24 小時）\n", "error")
         
         except Exception as e:
             self.log(f"\n❌ 出錯：{str(e)}\n", "error")
