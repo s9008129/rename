@@ -26,10 +26,17 @@ import argparse
 import sys
 
 # 配置
-DOWNLOADS_DIR = Path("/Users/hsiaojohnny/Downloads")
-SESSION_DIR = Path("/Users/hsiaojohnny/.copilot/session-state/0627c76d-21e0-4128-b7ff-ea283b16e7d2")
+# 使用相對路徑：PROJECT_ROOT 應該是執行腳本的目錄
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+LOGS_DIR = PROJECT_ROOT / "logs"
+
 LM_STUDIO_API = "http://127.0.0.1:1234/v1/chat/completions"
 BATCH_SIZE = 10  # 每批 10 張圖片
+
+# 確保必要的目錄存在
+DATA_DIR.mkdir(exist_ok=True)
+LOGS_DIR.mkdir(exist_ok=True)
 
 # 解析命令行參數
 parser = argparse.ArgumentParser(
@@ -44,13 +51,19 @@ parser.add_argument(
 )
 parser.add_argument(
     "--target-dir",
-    default=str(DOWNLOADS_DIR),
-    help="指定要處理的目錄（默認：~/Downloads）"
+    default=None,
+    help="指定要處理的目錄（默認：使用交互式提示輸入）"
 )
 args = parser.parse_args()
 
 FORCE_RENAME = args.force_rename
-TARGET_DIR = Path(args.target_dir).expanduser()
+
+# 如果沒有指定目錄，使用交互式輸入或當前目錄
+if args.target_dir:
+    TARGET_DIR = Path(args.target_dir).expanduser()
+else:
+    # 默認為當前工作目錄
+    TARGET_DIR = Path.cwd()
 
 print("=" * 80)
 print("🚀 圖片智能命名系統 - Qwen3-VL 批量分析和重命名")

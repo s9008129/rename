@@ -2,18 +2,38 @@
 """
 第一步：偵測並清理重複圖片
 使用文件內容哈希確保準確的重複偵測
+
+使用方法：
+    python src/deduplicate_and_cleanup.py --target-dir /path/to/images
 """
 
 import hashlib
 import json
 from pathlib import Path
 from collections import defaultdict
+import argparse
 
-downloads_dir = Path("/Users/hsiaojohnny/Downloads")
-session_dir = Path("/Users/hsiaojohnny/.copilot/session-state/0627c76d-21e0-4128-b7ff-ea283b16e7d2")
+# 解析命令行參數
+parser = argparse.ArgumentParser(
+    description="掃描並清理重複圖片檔案"
+)
+parser.add_argument(
+    "--target-dir",
+    default=None,
+    help="指定要掃描的目錄（默認：當前目錄）"
+)
+args = parser.parse_args()
+
+# 使用相對路徑：項目根目錄
+PROJECT_ROOT = Path(__file__).parent.parent
+if args.target_dir:
+    downloads_dir = Path(args.target_dir).expanduser()
+else:
+    downloads_dir = Path.cwd()
 
 print("🔍 第一步：偵測重複圖片檔案")
 print("=" * 70)
+print(f"掃描目錄：{downloads_dir}")
 print()
 
 # 掃描所有圖片
