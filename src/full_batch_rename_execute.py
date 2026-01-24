@@ -318,7 +318,7 @@ for result in analysis_results:
         new_name = analysis.get('recommended_name', 'UNKNOWN')
         
         # 確保新名稱有副檔名
-        old_path = DOWNLOADS_DIR / old_name
+        old_path = TARGET_DIR / old_name
         ext = old_path.suffix
         if not new_name.endswith(ext):
             new_name = new_name + ext
@@ -366,8 +366,8 @@ renamed_count = 0
 rename_errors = []
 
 for item in rename_plan:
-    old_path = DOWNLOADS_DIR / item['old_filename']
-    new_path = DOWNLOADS_DIR / item['new_filename']
+    old_path = TARGET_DIR / item['old_filename']
+    new_path = TARGET_DIR / item['new_filename']
     
     try:
         if old_path.exists():
@@ -376,7 +376,7 @@ for item in rename_plan:
                 base, ext = new_path.name.rsplit('.', 1)
                 counter = 1
                 while new_path.exists():
-                    new_path = DOWNLOADS_DIR / f"{base}_{counter:02d}.{ext}"
+                    new_path = TARGET_DIR / f"{base}_{counter:02d}.{ext}"
                     counter += 1
                 item['new_filename'] = new_path.name
             

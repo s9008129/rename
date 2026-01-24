@@ -449,6 +449,39 @@ cat data/analysis_results/verification.json | python -m json.tool
 
 ## 🐛 故障排查
 
+### GUI 相關問題
+
+#### 問題：GUI 啟動後顯示「執行失敗」或「無進度」
+```
+❌ 執行失敗（返回碼：1）
+```
+**原因和解決方案**：
+- **原因**：執行腳本中存在未捕捉的異常
+- **解決**：查看 GUI 中的 stderr 輸出以獲得詳細的錯誤信息
+- **檢查**：
+  1. 確認 LM Studio 正在運行：`curl http://127.0.0.1:1234/v1/models`
+  2. 確認目標資料夾存在且可寫
+  3. 檢查磁碟空間是否充足（至少 1GB）
+
+#### 問題：LLM 分析完成但沒有執行 Rename
+```
+✅ 分析完成（62 張圖片）
+[但檔案沒有被重命名]
+```
+**原因**（v1.1.2 已修復）：
+- **根本原因**：代碼中 DOWNLOADS_DIR 變數未定義，導致 rename 階段失敗
+- **修復版本**：v1.1.2 及以上已修復為使用 TARGET_DIR
+- **驗證修復**：
+  ```bash
+  grep DOWNLOADS_DIR src/full_batch_rename_execute.py  # 應該無輸出
+  ```
+- **手動修復**（v1.1.2 以前版本）：
+  1. 更新代碼到最新版本
+  2. 或手動編輯 `src/full_batch_rename_execute.py`
+  3. 將第 321 和 369 行的 `DOWNLOADS_DIR` 改為 `TARGET_DIR`
+
+### 連接和模型相關
+
 ### 問題：連接 LM Studio 失敗
 ```
 錯誤：Connection refused on 127.0.0.1:1234

@@ -475,6 +475,12 @@ class ImageRenamerGUI:
                     else:
                         self.log(line + '\n', "info")
             
+            # 關鍵修復：顯示 stderr 以檢測執行錯誤
+            if result.returncode != 0 and result.stderr:
+                self.log("\n" + "=" * 60 + "\n", "error")
+                self.log("❌ 執行出錯 (stderr 輸出)：\n", "error")
+                self.log(result.stderr + "\n", "error")
+            
             if result.returncode == 0:
                 self.log("\n" + "=" * 60 + "\n", "info")
                 self.log("✅ 命名完成！\n", "success")
@@ -485,8 +491,7 @@ class ImageRenamerGUI:
                 
                 self.log("\n🎉 所有操作已完成！\n", "success")
             else:
-                self.log("\n❌ 執行出錯：\n", "error")
-                self.log(result.stderr, "error")
+                self.log("\n❌ 執行失敗（返回碼：{}）\n".format(result.returncode), "error")
         
         except subprocess.TimeoutExpired:
             self.log("\n❌ 執行超時（超過 1 小時）\n", "error")
