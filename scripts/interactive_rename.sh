@@ -1,12 +1,23 @@
 #!/bin/bash
 
 #######################################################
-# 🎯 圖片智能命名系統 - 互動式介面
-# 目標：讓用戶指定資料夾並選擇是否刪除原檔案
+# 🎯 圖片智能命名系統 - 互動式介面 (v1.1)
+# 功能：
+#   • 讓用戶指定資料夾並選擇是否刪除原檔案
+#   • 智能檢測已命名 vs 未命名檔案
+#   • 支援增量模式（默認）和強制重新命名模式
 # 最小成本、輕量化設計
 #######################################################
 
 set -e
+
+# 檢查命令行參數
+FORCE_RENAME=false
+for arg in "$@"; do
+    if [ "$arg" = "--force-rename" ] || [ "$arg" = "--override" ]; then
+        FORCE_RENAME=true
+    fi
+done
 
 # 顏色定義
 RED='\033[0;31m'
@@ -121,6 +132,28 @@ count_images() {
         -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.bmp" \) -type f 2>/dev/null | wc -l
 }
 
+# 智能檢測已命名檔案（新增）
+detect_renamed_files() {
+    local dir="$1"
+    local has_chinese=0
+    local unnamed_count=0
+    local renamed_count=0
+    
+    # 統計包含中文和不包含中文的檔案
+    while IFS= read -r -d '' file; do
+        filename=$(basename "$file")
+        # 簡單的中文檢測：通過 grep 或 perl
+        if echo "$filename" | grep -q '[^\x00-\x7F]'; then
+            ((renamed_count++))
+        else
+            ((unnamed_count++))
+        fi
+    done < <(find "$dir" -maxdepth 1 \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \
+        -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.bmp" \) -type f -print0 2>/dev/null)
+    
+    echo "$unnamed_count $renamed_count"
+}
+
 #######################################################
 # 📋 主程序流程
 #######################################################
@@ -129,16 +162,22 @@ main() {
     clear
     
     # 顯示歡迎信息
-    print_header "🎯 圖片智能命名系統 v1.0"
+    print_header "🎯 圖片智能命名系統 v1.1"
     
     echo -e "歡迎使用互動式圖片命名工具！"
     echo -e ""
     echo -e "此工具可以幫助你："
     echo -e "  • 掃描指定資料夾中的圖片"
+    echo -e "  • 智能檢測已命名 vs 未命名的檔案"
     echo -e "  • 使用 AI 進行視覺分析"
     echo -e "  • 自動生成精準的中文命名"
     echo -e "  • 選擇是否刪除原檔案"
     echo -e ""
+    
+    if [ "$FORCE_RENAME" = true ]; then
+        print_warning "⚠️  強制重新命名模式已啟用（--force-rename）"
+        echo ""
+    fi
     
     # 第一步：詢問圖片資料夾
     print_info "步驟 1: 選擇要命名的資料夾"
@@ -149,7 +188,7 @@ main() {
         IMAGE_DIR="$HOME/Downloads"
     fi
     
-    # 驗證圖片數量
+    # 驗證圖片數量和檢測已命名檔案
     IMAGE_COUNT=$(count_images "$IMAGE_DIR")
     
     if [ "$IMAGE_COUNT" -eq 0 ]; then
@@ -161,6 +200,21 @@ main() {
         fi
     else
         print_success "找到 $IMAGE_COUNT 個圖片檔案"
+        
+        # 智能檢測已命名的檔案
+        read UNNAMED_COUNT RENAMED_COUNT <<< "$(detect_renamed_files "$IMAGE_DIR")"
+        
+        if [ "$RENAMED_COUNT" -gt 0 ]; then
+            echo ""
+            print_warning "檢測到 $RENAMED_COUNT 個已命名的檔案，$UNNAMED_COUNT 個未命名的檔案"
+            
+            if [ "$FORCE_RENAME" = false ]; then
+                print_info "📌 增量模式（默認）：將只命名 $UNNAMED_COUNT 個未命名的檔案"
+                print_info "💡 提示：如果想重新命名所有檔案，使用 --force-rename 參數"
+            else
+                print_warning "📌 強制模式：將重新命名全部 $IMAGE_COUNT 個檔案（包括已命名的）"
+            fi
+        fi
     fi
     
     echo ""
@@ -252,10 +306,13 @@ main() {
     log "=========================================="
     
     # 執行分析腳本
+    PYTHON_ARGS=("--target-dir" "$IMAGE_DIR")
+    if [ "$FORCE_RENAME" = true ]; then
+        PYTHON_ARGS+=("--force-rename")
+    fi
+    
     if conda run -n "$CONDA_ENV" python "${PROJECT_ROOT}/src/full_batch_rename_execute.py" \
-        --image_dir "$IMAGE_DIR" \
-        --config "$CONFIG_FILE" \
-        --log_file "${LOG_DIR}/analysis_${TIMESTAMP}.log"; then
+        "${PYTHON_ARGS[@]}"; then
         
         echo ""
         print_header "✨ 分析完成！"

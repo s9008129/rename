@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-完整執行：使用 Qwen3-VL 進行全量 342 張圖片分析和精準重命名
+完整執行：使用 Qwen3-VL 進行全量圖片分析和精準重命名
 
 流程：
-1. 分析全部 342 張圖片
+1. 分析全部圖片
 2. 生成精準命名對照表
 3. 執行檔案重命名
 4. 生成詳細報告
+
+新增功能（v1.1）：
+- 增量模式（默認）：跳過已命名的檔案（檔名包含中文）
+- 強制重新命名模式：重新分析和命名所有檔案
+- 全局檔案追蹤機制
 """
 
 import os
@@ -17,6 +22,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import time
 from datetime import datetime
+import argparse
+import sys
 
 # 配置
 DOWNLOADS_DIR = Path("/Users/hsiaojohnny/Downloads")
@@ -24,21 +31,71 @@ SESSION_DIR = Path("/Users/hsiaojohnny/.copilot/session-state/0627c76d-21e0-4128
 LM_STUDIO_API = "http://127.0.0.1:1234/v1/chat/completions"
 BATCH_SIZE = 10  # 每批 10 張圖片
 
+# 解析命令行參數
+parser = argparse.ArgumentParser(
+    description="圖片智能命名系統 - 使用 Qwen3-VL 進行視覺分析和重命名"
+)
+parser.add_argument(
+    "--force-rename",
+    "--override",
+    dest="force_rename",
+    action="store_true",
+    help="強制重新命名已命名的檔案（增量模式）"
+)
+parser.add_argument(
+    "--target-dir",
+    default=str(DOWNLOADS_DIR),
+    help="指定要處理的目錄（默認：~/Downloads）"
+)
+args = parser.parse_args()
+
+FORCE_RENAME = args.force_rename
+TARGET_DIR = Path(args.target_dir).expanduser()
+
 print("=" * 80)
-print("🚀 第二步：全量執行 342 張圖片的 Qwen3-VL 分析和重命名")
+print("🚀 圖片智能命名系統 - Qwen3-VL 批量分析和重命名")
 print("=" * 80)
 print(f"時間：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"目標目錄：{TARGET_DIR}")
+if FORCE_RENAME:
+    print("📌 模式：強制重新命名（將重新分析所有檔案）")
+else:
+    print("📌 模式：增量模式（將跳過已命名的檔案）")
 print()
+
+def is_already_renamed(filename: str) -> bool:
+    """檢測檔案是否已被命名（檔名包含中文字符）"""
+    import re
+    return bool(re.search(r'[\u4e00-\u9fff]', filename))
 
 # 掃描所有圖片
 image_files = sorted([
-    f for f in DOWNLOADS_DIR.glob("*") 
+    f for f in TARGET_DIR.glob("*") 
     if f.is_file() and f.suffix.lower() in {'.png', '.jpg', '.jpeg', '.webp', '.gif'}
 ])
 
-print(f"📊 掃描結果：總圖片數 = {len(image_files)}")
-print(f"   批次大小：{BATCH_SIZE} 張/批")
-print(f"   預計批次數：{(len(image_files) + BATCH_SIZE - 1) // BATCH_SIZE}")
+print(f"📊 掃描結果：找到 {len(image_files)} 個圖片檔案")
+
+# 檢測已命名和未命名的檔案
+if not FORCE_RENAME:
+    renamed_files = [f for f in image_files if is_already_renamed(f.stem)]
+    unnamed_files = [f for f in image_files if not is_already_renamed(f.stem)]
+    
+    print(f"   已命名：{len(renamed_files)} 個")
+    print(f"   未命名：{len(unnamed_files)} 個")
+    
+    if renamed_files:
+        print(f"   💡 提示：已命名的檔案將被跳過。使用 --force-rename 重新分析所有檔案")
+    
+    # 增量模式：只處理未命名的檔案
+    image_files = unnamed_files
+    print()
+    print(f"⚙️  開始處理 {len(image_files)} 個未命名的檔案...")
+else:
+    print(f"   批次大小：{BATCH_SIZE} 張/批")
+    print(f"   預計批次數：{(len(image_files) + BATCH_SIZE - 1) // BATCH_SIZE}")
+    print()
+
 print()
 
 # 分析結果儲存
