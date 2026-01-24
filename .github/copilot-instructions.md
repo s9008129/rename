@@ -248,7 +248,83 @@ GitHub Copilot 和 Claude AI 協作開發指導原則
 
 ---
 
-**最後更新**：2026-01-24  
-**項目**：Image Title-First Naming System  
-**維護者**：Development Team  
-**語言**：台灣繁體中文
+## 🔄 Auto Commit 機制（Non-Negotiable）
+
+**每次完成任務後，MUST 執行 git commit。**
+
+### Commit 訊息規範
+
+```
+<type>(<scope>): <簡短摘要>
+
+## 意圖與情境
+- 用戶想要達成什麼目標
+- 在什麼背景下提出需求
+
+## 執行內容
+- 具體做了哪些修改
+- 新增/修改/刪除了哪些檔案
+
+## 決策理由
+- 為什麼選擇這個方案
+- 第一性原理分析結果
+
+## 執行結果
+- 達成了什麼效果
+- 驗證結果（通過/失敗）
+
+## 待確認工作
+- 需要人類確認的事項
+- 後續建議的行動
+```
+
+### Commit Type
+
+| Type | 用途 |
+|------|------|
+| `feat` | 新功能 |
+| `fix` | 錯誤修復 |
+| `docs` | 文件更新 |
+| `refactor` | 重構（不改變功能） |
+| `test` | 測試相關 |
+| `chore` | 雜項（設定、依賴等） |
+
+### 語言要求
+
+- Commit 訊息 MUST 使用繁體中文（zh-TW）
+- 技術術語可保留英文（如 API、MCP、LLM）
+
+---
+
+## 🔧 Context7 MCP 使用規範（Non-Negotiable）
+
+**所有技術決策 MUST 透過 Context7 MCP 取得最新官方文件。**
+
+### 使用流程
+
+```
+1. 先呼叫 resolve-library-id 取得正確的 library ID
+2. 再呼叫 context7-query-docs 取得文件
+3. 基於官方文件做出技術決策
+4. 在 commit 中記錄文件來源
+```
+
+### 實踐範例
+
+**不好的做法：**
+```
+"我知道如何使用 Bash，直接寫腳本"
+```
+
+**好的做法：**
+```
+1. 呼叫 resolve-library-id 取得 /bminor/bash
+2. 呼叫 context7-query-docs 查詢 "interactive CLI user input"
+3. 基於官方文件最佳實踐編寫腳本
+4. 在 commit 中記錄來源：
+   "基於 Bash 官方文件 context7:/bminor/bash 的最佳實踐"
+```
+
+---
+
+
