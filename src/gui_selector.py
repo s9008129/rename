@@ -96,27 +96,46 @@ class ImageRenamerGUI:
         
     def build_ui(self):
         """構建用戶介面"""
-        # 主滾動框架（支持響應式布局）
-        main_frame = tk.Frame(self.root, bg=self.bg_color)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+        # 創建滾動框架（解決內容過多導致按鈕被隱藏的問題）
+        canvas = tk.Canvas(self.root, bg=self.bg_color, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.root, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=self.bg_color)
         
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # 綁定滾輪事件（支持滑鼠滾輪）
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        # 布局滾動框架
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # 在 scrollable_frame 中構建所有內容
         # 標題
-        self.build_header(main_frame)
+        self.build_header(scrollable_frame)
         
         # 資料夾選擇部分
-        self.build_folder_section(main_frame)
+        self.build_folder_section(scrollable_frame)
         
         # 選項部分
-        self.build_options_section(main_frame)
+        self.build_options_section(scrollable_frame)
         
         # 進度部分
-        self.build_progress_section(main_frame)
+        self.build_progress_section(scrollable_frame)
         
         # 按鈕部分
-        self.build_button_section(main_frame)
+        self.build_button_section(scrollable_frame)
         
         # 結果部分
-        self.build_result_section(main_frame)
+        self.build_result_section(scrollable_frame)
         
     def build_header(self, parent):
         """構建標題"""
