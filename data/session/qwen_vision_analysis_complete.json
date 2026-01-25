@@ -1,55 +1,22 @@
 {
   "metadata": {
-    "timestamp": "2026-01-25T10:19:50.220699",
-    "total_analyzed": 4,
-    "successful": 4,
+    "timestamp": "2026-01-25T13:47:35.570159",
+    "total_analyzed": 1,
+    "successful": 1,
     "failed": 0,
     "api_endpoint": "http://127.0.0.1:1234/v1/chat/completions",
     "model": "qwen/qwen3-vl-30b"
   },
   "detailed_results": [
     {
-      "filename": "Gemini_Generated_Image_468lfm468lfm468l.png",
+      "filename": "Gemini_Generated_Image_bqiwapbqiwapbqiw.png",
       "status": "success",
       "analysis": {
-        "image_title": "極其複雜資訊圖表局部修字術：降噪填空與外科手術式拼貼",
-        "main_theme": "技術",
-        "sub_theme": "AI與圖像處理",
-        "core_content": "AI圖像修復三步法",
-        "recommended_name": "AI圖像修復三步法"
-      }
-    },
-    {
-      "filename": "Gemini_Generated_Image_5nxpn85nxpn85nxp.png",
-      "status": "success",
-      "analysis": {
-        "image_title": "ChairGPT 萬能工具箱：隱藏版大禮包大公開！",
-        "main_theme": "技術",
-        "sub_theme": "AI工具",
-        "core_content": "AI提示連結產生器",
-        "recommended_name": "技術_AI工具_提示連結產生器"
-      }
-    },
-    {
-      "filename": "Gemini_Generated_Image_dha52cdha52cdha5.png",
-      "status": "success",
-      "analysis": {
-        "image_title": "日系可愛風：OpenAI構圖 × Google中文渲染 完美組合技",
-        "main_theme": "技術",
-        "sub_theme": "AI系統",
-        "core_content": "OpenAI與Google跨模型協作",
-        "recommended_name": "AI技術_跨模型協作_日系可愛風組合技"
-      }
-    },
-    {
-      "filename": "Gemini_Generated_Image_ox73ujox73ujox73.png",
-      "status": "success",
-      "analysis": {
-        "image_title": "極其複雜資訊圖表：高效局部修字終極方案",
-        "main_theme": "技術",
-        "sub_theme": "AI應用",
-        "core_content": "AI修復複雜圖表文字",
-        "recommended_name": "技術_AI應用_圖表文字修復方案"
+        "image_title": "2026年全球財經驚奇開局！(可愛風大盤點)",
+        "main_theme": "財經",
+        "sub_theme": "投資分析",
+        "core_content": "全球經濟與政治風向",
+        "recommended_name": "財經_投資分析_全球經濟風向"
       }
     }
   ]

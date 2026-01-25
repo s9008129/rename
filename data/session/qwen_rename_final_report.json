@@ -1,10 +1,11 @@
 {
-  "timestamp": "2026-01-25T10:19:50.222470",
-  "total_images": 4,
-  "analyzed": 4,
-  "successful_analysis": 4,
+  "timestamp": "2026-01-25T13:47:35.573742",
+  "total_images": 1,
+  "analyzed": 1,
+  "successful_analysis": 1,
   "failed_analysis": 0,
-  "renamed": 4,
+  "renamed": 1,
   "rename_errors": 0,
+  "deleted": 0,
   "errors": []
 }

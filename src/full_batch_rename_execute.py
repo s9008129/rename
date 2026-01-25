@@ -291,6 +291,12 @@ for batch_idx in range((len(remaining_files) + BATCH_SIZE - 1) // BATCH_SIZE):
             failed_files.append(result)
             print(f"❌")
         
+        # 計算並輸出進度百分比
+        progress_pct = int(total_processed * 100 / len(remaining_files)) if remaining_files else 0
+        eta = progress.get_eta_seconds()
+        eta_str = progress._format_time(eta) if eta > 0 else "計算中..."
+        print(f"[進度] 分析: {progress_pct}% | {total_processed}/{len(remaining_files)} | ETA: {eta_str}", flush=True)
+        
         # 稍作延遲
         time.sleep(0.5)
     
@@ -393,67 +399,91 @@ print()
 print("🔄 開始執行重命名...")
 print()
 
-# 更新進度：開始重命名
-progress.start_rename()
+# 檢查是否有需要重命名的檔案
+if not rename_plan:
+    print("[完成] ℹ️ 沒有找到需要重命名的圖片")
+    print("[完成] ✅ 所有操作已完成！", flush=True)
+    print()
+else:
+    # 更新進度：開始重命名
+    progress.start_rename()
 
-renamed_count = 0
-deleted_count = 0
-rename_errors = []
-delete_errors = []
+    renamed_count = 0
+    deleted_count = 0
+    rename_errors = []
+    delete_errors = []
 
-for idx, item in enumerate(rename_plan, 1):
-    old_path = TARGET_DIR / item['old_filename']
-    new_path = TARGET_DIR / item['new_filename']
-    
-    try:
-        if old_path.exists():
-            if new_path.exists() and new_path != old_path:
-                # 避免覆蓋現有檔案
-                base, ext = new_path.name.rsplit('.', 1)
-                counter = 1
-                while new_path.exists():
-                    new_path = TARGET_DIR / f"{base}_{counter:02d}.{ext}"
-                    counter += 1
-                item['new_filename'] = new_path.name
-            
-            # 如果勾選了「刪除原檔案」，先記錄舊檔案路徑和內容
-            should_delete_after_rename = DELETE_ORIGINAL
-            
-            # 執行重命名（這會將 old_path 更名為 new_path）
-            old_path.rename(new_path)
-            renamed_count += 1
-            print(f"✅ {item['old_filename'][:40]:<40} → {new_path.name[:35]}")
-            
-            # ⚠️ 注意：rename() 之後，old_path 不再存在
-            # 所以不需要再次刪除 old_path
-            # 如果 should_delete_after_rename，那麼原檔案已經被替換為新檔案了
-            # 不需要額外操作
-            
-            if should_delete_after_rename:
-                deleted_count += 1
-            
-            # 更新進度
-            progress.update_rename(idx)
-    
-    except Exception as e:
-        rename_errors.append({
-            "old": item['old_filename'],
-            "new": item['new_filename'],
-            "error": str(e)
-        })
-        print(f"❌ {item['old_filename'][:40]:<40} (錯誤：{str(e)[:30]})")
+    for idx, item in enumerate(rename_plan, 1):
+        old_path = TARGET_DIR / item['old_filename']
+        new_path = TARGET_DIR / item['new_filename']
+        
+        try:
+            if old_path.exists():
+                if new_path.exists() and new_path != old_path:
+                    # 避免覆蓋現有檔案
+                    base, ext = new_path.name.rsplit('.', 1)
+                    counter = 1
+                    while new_path.exists():
+                        new_path = TARGET_DIR / f"{base}_{counter:02d}.{ext}"
+                        counter += 1
+                    item['new_filename'] = new_path.name
+                
+                # 如果勾選了「刪除原檔案」，先記錄舊檔案路徑和內容
+                should_delete_after_rename = DELETE_ORIGINAL
+                
+                # 執行重命名（這會將 old_path 更名為 new_path）
+                old_path.rename(new_path)
+                renamed_count += 1
+                print(f"✅ {item['old_filename'][:40]:<40} → {new_path.name[:35]}")
+                
+                # ⚠️ 注意：rename() 之後，old_path 不再存在
+                # 所以不需要再次刪除 old_path
+                # 如果 should_delete_after_rename，那麼原檔案已經被替換為新檔案了
+                # 不需要額外操作
+                
+                if should_delete_after_rename:
+                    deleted_count += 1
+                
+                # 計算並輸出進度百分比
+                progress_pct = int(renamed_count * 100 / len(rename_plan)) if rename_plan else 0
+                eta = progress.get_eta_seconds()
+                eta_str = progress._format_time(eta) if eta > 0 else "計算中..."
+                print(f"[進度] 重命名: {progress_pct}% | {renamed_count}/{len(rename_plan)} | ETA: {eta_str}", flush=True)
+                
+                # 更新進度
+                progress.update_rename(idx)
+        
+        except Exception as e:
+            rename_errors.append({
+                "old": item['old_filename'],
+                "new": item['new_filename'],
+                "error": str(e)
+            })
+            print(f"❌ {item['old_filename'][:40]:<40} (錯誤：{str(e)[:30]})")
 
 print()
 print("=" * 80)
 print(f"✨ 重命名完成")
 print("=" * 80)
 
-# 更新進度：完成重命名
-progress.complete_rename(renamed_count, len(rename_errors))
-print(f"成功重命名：{renamed_count} 張")
-print(f"重命名失敗：{len(rename_errors)} 張")
-if DELETE_ORIGINAL:
-    print(f"✅ 已刪除原檔案（重命名時自動刪除）：{deleted_count} 張")
+if rename_plan:
+    # 更新進度：完成重命名
+    progress.complete_rename(renamed_count, len(rename_errors))
+    print(f"成功重命名：{renamed_count} 張")
+    print(f"重命名失敗：{len(rename_errors)} 張")
+    if DELETE_ORIGINAL:
+        print(f"✅ 已刪除原檔案（重命名時自動刪除）：{deleted_count} 張")
+else:
+    renamed_count = 0
+    deleted_count = 0
+    rename_errors = []
+
+print()
+
+# 輸出最終完成訊息（確保 GUI 能看到）
+print("[完成] ✅ 所有操作已完成！", flush=True)
+print(f"[完成] 📊 統計：共處理 {total_processed} 張圖片", flush=True)
+print(f"[完成] ⏱️  總耗時：{progress._format_time(time.time() - progress.start_time)}", flush=True)
 print()
 
 # 保存最終報告

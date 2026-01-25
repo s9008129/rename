@@ -2,55 +2,40 @@
 # -*- coding: utf-8 -*-
 
 """
-圖片智能命名系統 - GUI 資料夾選擇介面（v1.2.2 macOS 設計優化版本）
+圖片智能命名系統 - GUI 資料夾選擇介面（暗色主題）
 
 功能：
 - 圖形化資料夾選擇
 - 是否刪除原檔案選項
 - 是否強制重新命名選項
-- 實時進度顯示（進度條、百分比、ETA）
+- 進度監控
 - 結果顯示
-- 完成通知
 
-設計特點：
-- 符合 macOS Human Interface Guidelines
-- 使用原生 ttk.Progressbar
-- 藍色、紅色、綠色 macOS 標準色
-- 高對比度，文字清晰
-- 適當的 padding 和 spacing
+技術：
+- tkinter（Python 內置，無額外依賴）
+- 跨平台支持（macOS, Linux, Windows）
+- 暗色主題，高對比度
 """
 
 import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext, ttk
+from tkinter import filedialog, messagebox, scrolledtext
 import subprocess
 from pathlib import Path
 import threading
 from datetime import datetime
-import re
 
 # 獲取項目根目錄
 PROJECT_ROOT = Path(__file__).parent.parent
 SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 
-# macOS 標準色（來自 Apple Human Interface Guidelines）
-MACOS_BLUE = "#007AFF"        # 主要交互色
-MACOS_RED = "#FF3B30"         # 破壞性操作
-MACOS_GREEN = "#34C759"       # 成功/確認
-MACOS_GRAY = "#8E8E93"        # 次要文字
-MACOS_LIGHT_GRAY = "#E5E5EA"  # 分隔線/邊框
-DARK_BG = "#1a3a52"           # 暗藍色背景
-LIGHT_TEXT = "#e8f4f8"        # 淺藍白色文字
-DARK_TEXT_BG = "#0d1f2d"      # 文本框背景
-
 class ImageRenamerGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("📸 圖片智能命名系統 v1.2.2")
-        self.root.geometry("800x900")
-        self.root.minsize(700, 800)
+        self.root.title("📸 圖片智能命名系統 v1.1.2")
+        self.root.geometry("750x650")
         self.root.resizable(True, True)
         
-        # 配置樣式 - macOS 設計
+        # 配置樣式 - 暗色主題
         self.setup_styles()
         
         # 選擇的資料夾
@@ -59,72 +44,39 @@ class ImageRenamerGUI:
         # 構建UI
         self.build_ui()
         
-        # 進度相關變數
-        self.current_progress = 0
-        self.total_items = 0
-        self.is_processing = False
-        
     def setup_styles(self):
-        """設置樣式 - 符合 macOS 設計"""
-        self.root.configure(bg=DARK_BG)
+        """設置樣式 - 暗藍色主題，高對比度可讀性優化"""
+        self.root.configure(bg="#1a3a52")
         
-        # 配置 ttk style（適應 macOS）
-        style = ttk.Style()
-        style.theme_use('aqua')  # macOS 原生主題
+        # 顏色方案：暗藍色系，提高文字可讀性
+        self.bg_color = "#1a3a52"              # 暗藍色背景
+        self.fg_color = "#e8f4f8"              # 淺藍白色文字
+        self.button_color = "#4CAF50"          # 綠色按鈕
+        self.button_hover = "#45a049"          # 按鈕懸停色
+        self.text_bg = "#0d1f2d"               # 文本框背景（更深藍色）
+        self.text_fg = "#c8e6f5"               # 文本框文字（淺藍白色，高對比）
+        self.error_color = "#ff6b6b"           # 錯誤文字（紅色）
+        self.success_color = "#51cf66"         # 成功文字（綠色）
+        self.info_color = "#74c0fc"            # 信息文字（藍色）
         
-        # 顏色方案
-        self.bg_color = DARK_BG
-        self.fg_color = LIGHT_TEXT
-        self.text_bg = DARK_TEXT_BG
-        self.text_fg = "#c8e6f5"
-        self.error_color = MACOS_RED
-        self.success_color = MACOS_GREEN
-        self.info_color = MACOS_BLUE
-        self.button_primary = MACOS_BLUE
-        self.button_danger = MACOS_RED
-        self.button_secondary = MACOS_GRAY
-        
-        # 字體定義（macOS 規範）
-        self.title_font = ("San Francisco", 28, "bold")
-        self.subtitle_font = ("San Francisco", 16)
-        self.label_font = ("San Francisco", 14)
-        self.button_font = ("San Francisco", 14, "bold")
-        self.checkbox_font = ("San Francisco", 13)
-        self.help_font = ("San Francisco", 12, "regular")
-        self.text_font = ("Menlo", 12)
-        self.mono_font = ("Monaco", 11)
+        # 字體定義（基於 Context7 tkinter 最佳實踐）
+        self.title_font = ("Arial", 28, "bold")      # 大標題：28px
+        self.subtitle_font = ("Arial", 14)           # 副標題：14px
+        self.label_font = ("Arial", 14)              # 標籤：14px
+        self.button_font = ("Arial", 14, "bold")     # 按鈕：14px
+        self.checkbox_font = ("Arial", 13)           # 複選框：13px
+        self.help_font = ("Arial", 12, "italic")     # 幫助文字：12px
+        self.text_font = ("Courier", 12)             # 文本框：12px
         
     def build_ui(self):
         """構建用戶介面"""
-        # 主滾動框架（支持響應式布局）
-        main_frame = tk.Frame(self.root, bg=self.bg_color)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
         
         # 標題
-        self.build_header(main_frame)
-        
-        # 資料夾選擇部分
-        self.build_folder_section(main_frame)
-        
-        # 選項部分
-        self.build_options_section(main_frame)
-        
-        # 進度部分
-        self.build_progress_section(main_frame)
-        
-        # 按鈕部分
-        self.build_button_section(main_frame)
-        
-        # 結果部分
-        self.build_result_section(main_frame)
-        
-    def build_header(self, parent):
-        """構建標題"""
-        header_frame = tk.Frame(parent, bg=self.bg_color)
-        header_frame.pack(fill=tk.X, padx=24, pady=(20, 10))
+        title_frame = tk.Frame(self.root, bg=self.bg_color)
+        title_frame.pack(fill=tk.X, padx=20, pady=20)
         
         title = tk.Label(
-            header_frame,
+            title_frame,
             text="📸 圖片智能命名系統",
             font=self.title_font,
             bg=self.bg_color,
@@ -133,27 +85,38 @@ class ImageRenamerGUI:
         title.pack(anchor=tk.W)
         
         subtitle = tk.Label(
-            header_frame,
+            title_frame,
             text="使用 Qwen3-VL 視覺分析 + 精準 AI 命名",
             font=self.subtitle_font,
             bg=self.bg_color,
-            fg=MACOS_GRAY
+            fg="#999999"
         )
         subtitle.pack(anchor=tk.W, pady=(5, 0))
         
-    def build_folder_section(self, parent):
+        # 資料夾選擇部分
+        self.build_folder_section()
+        
+        # 選項部分
+        self.build_options_section()
+        
+        # 按鈕部分
+        self.build_button_section()
+        
+        # 進度/結果部分
+        self.build_result_section()
+        
+    def build_folder_section(self):
         """構建資料夾選擇部分"""
         folder_frame = tk.LabelFrame(
-            parent,
+            self.root,
             text="📁 步驟 1：選擇要命名的資料夾",
-            font=("San Francisco", 13, "bold"),
+            font=("Arial", 14, "bold"),
             bg=self.bg_color,
             fg=self.fg_color,
-            padx=20,
+            padx=15,
             pady=15,
             bd=1,
-            relief=tk.FLAT,
-            labelanchor="nw"
+            relief=tk.FLAT
         )
         folder_frame.pack(fill=tk.X, padx=20, pady=15)
         
@@ -164,23 +127,23 @@ class ImageRenamerGUI:
         tk.Label(
             selected_frame,
             text="選擇的資料夾：",
-            font=("San Francisco", 11),
+            font=("Arial", 12),
             bg=self.text_bg,
-            fg=MACOS_GRAY
-        ).pack(anchor=tk.W, padx=12, pady=(8, 3))
+            fg="#999999"
+        ).pack(anchor=tk.W, padx=10, pady=(8, 3))
         
         folder_label = tk.Label(
             selected_frame,
             textvariable=self.selected_dir,
-            font=self.mono_font,
+            font=self.text_font,
             bg=self.text_bg,
             fg=self.info_color,
-            wraplength=700,
+            wraplength=500,
             justify=tk.LEFT
         )
-        folder_label.pack(anchor=tk.W, padx=12, pady=(0, 8))
+        folder_label.pack(anchor=tk.W, padx=10, pady=(0, 8))
         
-        # 選擇按鈕（藍色，macOS 標準）
+        # 選擇按鈕
         button_frame = tk.Frame(folder_frame, bg=self.bg_color)
         button_frame.pack(fill=tk.X, pady=10)
         
@@ -189,15 +152,14 @@ class ImageRenamerGUI:
             text="🗂️ 瀏覽資料夾...",
             command=self.select_folder,
             font=self.button_font,
-            bg=self.button_primary,
+            bg=self.button_color,
             fg="white",
-            padx=24,
+            padx=20,
             pady=10,
             cursor="hand2",
-            activebackground="#0051CC",
+            activebackground=self.button_hover,
             relief=tk.RAISED,
-            bd=0,
-            highlightthickness=0
+            bd=1
         )
         select_btn.pack(side=tk.LEFT, padx=5)
         
@@ -207,23 +169,22 @@ class ImageRenamerGUI:
             text="💡 提示：可以選擇任何資料夾，程式會自動掃描子資料夾中的所有圖片",
             font=self.help_font,
             bg=self.bg_color,
-            fg=MACOS_GRAY
+            fg="#999999"
         )
         help_text.pack(anchor=tk.W, pady=(10, 0))
         
-    def build_options_section(self, parent):
+    def build_options_section(self):
         """構建選項部分"""
         options_frame = tk.LabelFrame(
-            parent,
+            self.root,
             text="⚙️ 步驟 2：選擇執行選項",
-            font=("San Francisco", 13, "bold"),
+            font=("Arial", 14, "bold"),
             bg=self.bg_color,
             fg=self.fg_color,
-            padx=20,
+            padx=15,
             pady=15,
             bd=1,
-            relief=tk.FLAT,
-            labelanchor="nw"
+            relief=tk.FLAT
         )
         options_frame.pack(fill=tk.X, padx=20, pady=15)
         
@@ -251,9 +212,9 @@ class ImageRenamerGUI:
             variable=self.delete_original_var,
             font=self.checkbox_font,
             bg=self.bg_color,
-            fg=MACOS_RED,
+            fg=self.error_color,
             activebackground=self.bg_color,
-            activeforeground=MACOS_RED,
+            activeforeground=self.error_color,
             selectcolor=self.text_bg,
             cursor="hand2"
         )
@@ -265,145 +226,82 @@ class ImageRenamerGUI:
             text="⚠️ 注意：刪除原檔案操作無法復原！",
             font=self.help_font,
             bg=self.bg_color,
-            fg=MACOS_RED
+            fg=self.error_color
         )
         warning_text.pack(anchor=tk.W, pady=(8, 0))
         
-    def build_progress_section(self, parent):
-        """構建進度部分"""
-        progress_frame = tk.LabelFrame(
-            parent,
-            text="📊 執行進度",
-            font=("San Francisco", 13, "bold"),
-            bg=self.bg_color,
-            fg=self.fg_color,
-            padx=20,
-            pady=15,
-            bd=1,
-            relief=tk.FLAT,
-            labelanchor="nw"
-        )
-        progress_frame.pack(fill=tk.X, padx=20, pady=15)
-        
-        # 進度百分比
-        self.progress_label = tk.Label(
-            progress_frame,
-            text="進度：等待開始",
-            font=("San Francisco", 12),
-            bg=self.bg_color,
-            fg=self.info_color
-        )
-        self.progress_label.pack(anchor=tk.W, pady=(0, 10))
-        
-        # 進度條（使用 ttk，macOS 原生樣式）
-        self.progress_bar = ttk.Progressbar(
-            progress_frame,
-            length=600,
-            mode='determinate',
-            value=0,
-            maximum=100
-        )
-        self.progress_bar.pack(fill=tk.X, pady=10)
-        
-        # ETA 標籤
-        self.eta_label = tk.Label(
-            progress_frame,
-            text="ETA：計算中...",
-            font=("San Francisco", 11),
-            bg=self.bg_color,
-            fg=MACOS_GRAY
-        )
-        self.eta_label.pack(anchor=tk.W, pady=(10, 0))
-        
-        # 當前步驟
-        self.step_label = tk.Label(
-            progress_frame,
-            text="",
-            font=("San Francisco", 11),
-            bg=self.bg_color,
-            fg=MACOS_GRAY
-        )
-        self.step_label.pack(anchor=tk.W, pady=(5, 0))
-        
-    def build_button_section(self, parent):
+    def build_button_section(self):
         """構建按鈕部分"""
-        button_frame = tk.Frame(parent, bg=self.bg_color)
+        button_frame = tk.Frame(self.root, bg=self.bg_color)
         button_frame.pack(fill=tk.X, padx=20, pady=20)
         
-        # 開始按鈕（藍色，主要操作）
         start_btn = tk.Button(
             button_frame,
             text="🚀 開始命名",
             command=self.start_renaming,
             font=self.button_font,
-            bg=MACOS_BLUE,
+            bg="#27ae60",
             fg="white",
-            padx=32,
-            pady=12,
+            padx=35,
+            pady=14,
             cursor="hand2",
-            activebackground="#0051CC",
+            activebackground="#229954",
             relief=tk.RAISED,
-            bd=0,
-            highlightthickness=0
+            bd=1
         )
         start_btn.pack(side=tk.LEFT, padx=5)
         
-        # 清空按鈕（灰色，次要操作）
         clear_btn = tk.Button(
             button_frame,
             text="🔄 清空",
             command=self.clear_selection,
-            font=("San Francisco", 13),
-            bg=MACOS_GRAY,
+            font=("Arial", 13),
+            bg="#5a6c7d",
             fg="white",
             padx=20,
-            pady=10,
+            pady=12,
             cursor="hand2",
-            activebackground="#72747D",
+            activebackground="#4a5c6d",
             relief=tk.RAISED,
-            bd=0,
-            highlightthickness=0
+            bd=1
         )
         clear_btn.pack(side=tk.LEFT, padx=5)
         
-        # 關閉按鈕（紅色，破壞性操作）
         quit_btn = tk.Button(
             button_frame,
             text="❌ 關閉",
             command=self.root.quit,
-            font=("San Francisco", 13),
-            bg=MACOS_RED,
+            font=("Arial", 13),
+            bg="#e74c3c",
             fg="white",
             padx=20,
-            pady=10,
+            pady=12,
             cursor="hand2",
-            activebackground="#CC1410",
+            activebackground="#c0392b",
             relief=tk.RAISED,
-            bd=0,
-            highlightthickness=0
+            bd=1
         )
         quit_btn.pack(side=tk.RIGHT, padx=5)
         
-    def build_result_section(self, parent):
+    def build_result_section(self):
         """構建結果顯示部分"""
         result_frame = tk.LabelFrame(
-            parent,
-            text="📋 執行日誌",
-            font=("San Francisco", 13, "bold"),
+            self.root,
+            text="📊 執行結果",
+            font=("Arial", 14, "bold"),
             bg=self.bg_color,
             fg=self.fg_color,
             padx=15,
             pady=15,
             bd=1,
-            relief=tk.FLAT,
-            labelanchor="nw"
+            relief=tk.FLAT
         )
         result_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=15)
         
         # 結果文本框
         self.result_text = scrolledtext.ScrolledText(
             result_frame,
-            height=12,
+            height=10,
             font=self.text_font,
             bg=self.text_bg,
             fg=self.text_fg,
@@ -415,15 +313,15 @@ class ImageRenamerGUI:
         self.result_text.pack(fill=tk.BOTH, expand=True)
         
         # 配置顏色標籤
-        self.result_text.tag_configure("success", foreground=MACOS_GREEN)
-        self.result_text.tag_configure("error", foreground=MACOS_RED)
-        self.result_text.tag_configure("info", foreground=MACOS_BLUE)
-        self.result_text.tag_configure("warning", foreground="#FFD60A")
-        self.result_text.tag_configure("completed", foreground=MACOS_GREEN, background=self.text_bg)
+        self.result_text.tag_configure("success", foreground=self.success_color)
+        self.result_text.tag_configure("error", foreground=self.error_color)
+        self.result_text.tag_configure("info", foreground=self.info_color)
+        self.result_text.tag_configure("warning", foreground="#ffd666")
         
         # 初始信息
         self.log("歡迎使用圖片智能命名系統！\n", "info")
         self.log("👉 請先選擇要命名的資料夾\n", "info")
+        self.log("=" * 60 + "\n")
         
     def log(self, message, tag="info"):
         """在結果框中記錄信息"""
@@ -476,13 +374,10 @@ class ImageRenamerGUI:
         self.selected_dir.set("")
         self.force_rename_var.set(False)
         self.delete_original_var.set(False)
-        self.progress_bar['value'] = 0
-        self.progress_label.config(text="進度：等待開始")
-        self.eta_label.config(text="ETA：計算中...")
-        self.step_label.config(text="")
         self.result_text.delete(1.0, tk.END)
         self.log("歡迎使用圖片智能命名系統！\n", "info")
         self.log("👉 請先選擇要命名的資料夾\n", "info")
+        self.log("=" * 60 + "\n")
     
     def start_renaming(self):
         """開始命名"""
@@ -505,7 +400,6 @@ class ImageRenamerGUI:
         
         # 禁用按鈕
         self.disable_controls()
-        self.is_processing = True
         
         # 在新線程中執行命名
         thread = threading.Thread(
@@ -539,48 +433,13 @@ class ImageRenamerGUI:
         for child in widget.winfo_children():
             self._enable_widget_recursively(child)
     
-    def parse_progress(self, line):
-        """解析進度訊息"""
-        # 匹配 [進度] 格式的訊息
-        match = re.search(r'\[進度\]\s+(\S+):\s+(\d+)%\s+\|\s+(\d+)/(\d+)\s+\|\s+ETA:\s+(.+)', line)
-        if match:
-            step = match.group(1)  # 分析/重命名
-            progress = int(match.group(2))
-            current = int(match.group(3))
-            total = int(match.group(4))
-            eta = match.group(5)
-            
-            return {
-                'step': step,
-                'progress': progress,
-                'current': current,
-                'total': total,
-                'eta': eta
-            }
-        return None
-    
-    def update_progress_ui(self, progress_data):
-        """更新進度 UI"""
-        if progress_data:
-            progress = progress_data['progress']
-            step = progress_data['step']
-            current = progress_data['current']
-            total = progress_data['total']
-            eta = progress_data['eta']
-            
-            self.progress_bar['value'] = progress
-            self.progress_label.config(text=f"進度：{progress}% ({current}/{total})")
-            self.eta_label.config(text=f"ETA：{eta}")
-            self.step_label.config(text=f"正在執行：{step}")
-            self.root.update()
-    
     def run_renaming(self, folder):
         """執行命名（在線程中運行）"""
         try:
             self.log(f"\n🚀 開始處理...\n", "info")
             self.log(f"資料夾：{folder}\n", "info")
             self.log(f"時間：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n", "info")
-            self.log("=" * 70 + "\n", "info")
+            self.log("=" * 60 + "\n", "info")
             
             # 構建命令
             cmd = [
@@ -597,9 +456,10 @@ class ImageRenamerGUI:
             
             self.log("⏳ 正在分析圖片內容（這可能需要幾分鐘）...\n", "warning")
             self.log("提示：進度信息將在下方實時顯示\n", "info")
-            self.log("=" * 70 + "\n", "info")
+            self.log("=" * 60 + "\n", "info")
             
             # 使用 Popen 實現實時輸出捕獲
+            import subprocess
             import select
             
             process = subprocess.Popen(
@@ -625,16 +485,9 @@ class ImageRenamerGUI:
                         if line:
                             line = line.rstrip('\n')
                             if line:
-                                # 嘗試解析進度訊息
-                                progress_data = self.parse_progress(line)
-                                if progress_data:
-                                    self.update_progress_ui(progress_data)
-                                
                                 # 根據內容選擇顏色標籤
                                 if fd == process.stderr:
                                     self.log(line + '\n', "error")
-                                elif '[完成]' in line:
-                                    self.log(line + '\n', "success")
                                 elif '✅' in line or 'success' in line.lower():
                                     self.log(line + '\n', "success")
                                 elif '❌' in line or 'error' in line.lower():
@@ -668,28 +521,11 @@ class ImageRenamerGUI:
             return_code = process.returncode
             
             if return_code == 0:
-                self.log("\n" + "=" * 70 + "\n", "success")
+                self.log("\n" + "=" * 60 + "\n", "success")
                 self.log("✅ 命名完成！\n", "success")
                 self.log("\n🎉 所有操作已完成！\n", "success")
-                
-                # 設置進度條為 100%
-                self.progress_bar['value'] = 100
-                self.progress_label.config(text="進度：100% (完成)")
-                self.step_label.config(text="狀態：✅ 所有操作已完成")
-                
-                # 成功提示
-                messagebox.showinfo(
-                    "操作完成",
-                    "✅ 圖片命名已完成！\n\n所有圖片已成功重命名。"
-                )
             else:
                 self.log("\n❌ 執行失敗（返回碼：{}）\n".format(return_code), "error")
-                
-                # 失敗提示
-                messagebox.showerror(
-                    "操作失敗",
-                    f"❌ 執行失敗，返回碼：{return_code}"
-                )
         
         except Exception as e:
             self.log(f"\n❌ 出錯：{str(e)}\n", "error")
@@ -697,7 +533,6 @@ class ImageRenamerGUI:
             self.log(f"詳細信息：{traceback.format_exc()}\n", "error")
         
         finally:
-            self.is_processing = False
             self.enable_controls()
 
 
