@@ -451,53 +451,86 @@ class ImageRenamerGUI:
             if self.force_rename_var.get():
                 cmd.append("--force-rename")
             
+            if self.delete_original_var.get():
+                cmd.append("--delete-original")
+            
             self.log("⏳ 正在分析圖片內容（這可能需要幾分鐘）...\n", "warning")
-            self.log("提示：進度信息將在下方顯示\n", "info")
+            self.log("提示：進度信息將在下方實時顯示\n", "info")
             self.log("=" * 60 + "\n", "info")
             
-            # 執行命令
-            result = subprocess.run(
+            # 使用 Popen 實現實時輸出捕獲
+            import subprocess
+            import select
+            
+            process = subprocess.Popen(
                 cmd,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                timeout=86400  # 24 小時超時（支持大量圖片）
+                bufsize=1  # 行緩衝，確保實時輸出
             )
             
-            # 顯示輸出
-            if result.stdout:
-                for line in result.stdout.split('\n'):
-                    if '✅' in line or 'success' in line.lower():
-                        self.log(line + '\n', "success")
-                    elif '❌' in line or 'error' in line.lower():
-                        self.log(line + '\n', "error")
-                    elif '⚠️' in line or 'warning' in line.lower():
-                        self.log(line + '\n', "warning")
-                    else:
-                        self.log(line + '\n', "info")
+            # 同時監視 stdout 和 stderr
+            try:
+                while True:
+                    # 使用 select 同時讀取 stdout 和 stderr
+                    ready_fds, _, _ = select.select(
+                        [process.stdout, process.stderr],
+                        [], [],
+                        0.1  # 100ms 超時
+                    )
+                    
+                    for fd in ready_fds:
+                        line = fd.readline()
+                        if line:
+                            line = line.rstrip('\n')
+                            if line:
+                                # 根據內容選擇顏色標籤
+                                if fd == process.stderr:
+                                    self.log(line + '\n', "error")
+                                elif '✅' in line or 'success' in line.lower():
+                                    self.log(line + '\n', "success")
+                                elif '❌' in line or 'error' in line.lower():
+                                    self.log(line + '\n', "error")
+                                elif '⚠️' in line or '⏳' in line or 'warning' in line.lower():
+                                    self.log(line + '\n', "warning")
+                                else:
+                                    self.log(line + '\n', "info")
+                    
+                    # 檢查進程是否完成
+                    if process.poll() is not None:
+                        break
+                
+                # 讀取任何剩餘的輸出
+                remaining_stdout = process.stdout.read()
+                if remaining_stdout:
+                    for line in remaining_stdout.split('\n'):
+                        if line:
+                            self.log(line + '\n', "info")
+                
+                remaining_stderr = process.stderr.read()
+                if remaining_stderr:
+                    for line in remaining_stderr.split('\n'):
+                        if line:
+                            self.log(line + '\n', "error")
+                
+            except Exception as e:
+                self.log(f"\n⚠️ 讀取輸出出錯：{str(e)}\n", "warning")
             
-            # 關鍵修復：顯示 stderr 以檢測執行錯誤
-            if result.returncode != 0 and result.stderr:
-                self.log("\n" + "=" * 60 + "\n", "error")
-                self.log("❌ 執行出錯 (stderr 輸出)：\n", "error")
-                self.log(result.stderr + "\n", "error")
+            # 檢查返回碼
+            return_code = process.returncode
             
-            if result.returncode == 0:
-                self.log("\n" + "=" * 60 + "\n", "info")
+            if return_code == 0:
+                self.log("\n" + "=" * 60 + "\n", "success")
                 self.log("✅ 命名完成！\n", "success")
-                
-                if self.delete_original_var.get():
-                    self.log("\n⏳ 正在刪除原檔案...\n", "warning")
-                    self.log("✅ 原檔案已刪除\n", "success")
-                
                 self.log("\n🎉 所有操作已完成！\n", "success")
             else:
-                self.log("\n❌ 執行失敗（返回碼：{}）\n".format(result.returncode), "error")
-        
-        except subprocess.TimeoutExpired:
-            self.log("\n❌ 執行超時（超過 24 小時）\n", "error")
+                self.log("\n❌ 執行失敗（返回碼：{}）\n".format(return_code), "error")
         
         except Exception as e:
             self.log(f"\n❌ 出錯：{str(e)}\n", "error")
+            import traceback
+            self.log(f"詳細信息：{traceback.format_exc()}\n", "error")
         
         finally:
             self.enable_controls()

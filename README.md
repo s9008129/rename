@@ -4,9 +4,19 @@
 
 一個基於本地 Vision Model 的圖片視覺分析和智能命名系統。通過優先使用圖片中直接提取的標題，實現精準、清晰、可復用的圖片文件命名。
 
-**最新版本**：v1.2（2026-01-24）- 支持大量圖片 + 實時進度追蹤  
+**最新版本**：v1.2.1（2026-01-25）- Bug 修復版本 + 實時進度顯示 + 刪除原檔案支持  
 **項目成果**：338 張圖片精準命名，品質評分 100 / 100，驗收標準達成 120%。  
-**規模測試**：✅ 2449 張 iPhone 備份照片支持，✅ 前 10 張照片驗證成功
+**規模測試**：✅ 2449 張 iPhone 備份照片支持，✅ 前 10 張照片驗證成功，✅ 實時進度顯示正常工作
+
+### v1.2.1 改進重點（2026-01-25）
+
+| 改進項 | 說明 | 驗證狀態 |
+|--------|------|--------|
+| 🔄 **實時進度顯示** | GUI 和終端均支持逐行實時進度 | ✅ 驗證完畢 |
+| 🗑️ **刪除原檔案** | 添加 --delete-original 參數，GUI Checkbox 支持 | ✅ 驗證完畢 |
+| 📊 **邏輯修復** | 理解 Path.rename() 行為，修正刪除邏輯 | ✅ 驗證完畢 |
+| ⚠️ **錯誤監視** | 同時監視 stdout 和 stderr，實時顯示錯誤 | ✅ 驗證完畢 |
+| ✅ **完成通知** | 添加明確的完成訊息和進度 100% 提示 | ✅ 驗證完畢 |
 
 ---
 
@@ -51,6 +61,7 @@
 | **語言** | Python 3.11+ | 核心實現語言 |
 | **環境** | Conda | 依賴和環境管理 |
 | **資料** | JSON | 分析結果和映射表 |
+| **進程通信** | subprocess.Popen + select.select | 實時進度顯示 |
 | **開發** | GitHub + Copilot | 協作開發工具 |
 
 ---
@@ -62,22 +73,22 @@
 ```
 dev/rename/
 ├── .github/
-│   └── copilot-instructions.md      # AI 協作指導原則
+│   └── copilot-instructions.md         # AI 協作指導原則
 ├── src/
-│   ├── full_batch_rename_execute.py # 主要分析腳本（v1.2：進度追蹤、24小時超時）
-│   ├── progress_tracker.py          # 進度追蹤模塊（v1.2 新增）
-│   ├── gui_selector.py              # GUI 介面（v1.2：超時增加到 24 小時）
-│   ├── file_tracker.py              # 檔案追蹤模塊
-│   ├── deduplicate_and_cleanup.py   # 重複清理腳本
-│   └── utilities.py                 # 工具函數
+│   ├── full_batch_rename_execute.py    # 主要分析腳本（v1.2.1：實時進度、刪除支持）
+│   ├── progress_tracker.py             # 進度追蹤模塊（v1.2 新增）
+│   ├── gui_selector.py                 # GUI 介面（v1.2.1：實時進度、Popen）
+│   ├── file_tracker.py                 # 檔案追蹤模塊
+│   ├── deduplicate_and_cleanup.py      # 重複清理腳本
+│   └── utilities.py                    # 工具函數
 ├── config/
-│   ├── config.yaml                  # 配置參數（所有相對路徑）
-│   └── templates/                   # 配置模板
+│   ├── config.yaml                     # 配置參數（所有相對路徑）
+│   └── templates/                      # 配置模板
 ├── data/
-│   ├── analysis_results/            # 分析結果輸出
-│   ├── mapping/                     # 新舊檔名映射表
-│   ├── .renamed_tracker.json        # 全局檔案追蹤
-│   └── samples/                     # 示例圖片和結果
+│   ├── session/                        # 執行會話（進度追蹤、報告）
+│   ├── tracking/                       # 全局檔案追蹤
+│   ├── analysis_results/               # 分析結果輸出
+│   └── samples/                        # 示例圖片和結果
 ├── docs/                            # 📌 v1.1.1 新增（集中文檔）
 │   ├── v1.1_智能文件追蹤功能說明.md  # v1.1 功能說明
 │   ├── 04-smart-file-tracking-implementation.md  # 實現細節

@@ -65,10 +65,16 @@ parser.add_argument(
     default=None,
     help="限制處理的圖片數量（用於測試，默認：無限制）"
 )
+parser.add_argument(
+    "--delete-original",
+    action="store_true",
+    help="重命名後刪除原檔案"
+)
 args = parser.parse_args()
 
 FORCE_RENAME = args.force_rename
 LIMIT_IMAGES = args.limit  # 新增：限制圖片數量
+DELETE_ORIGINAL = args.delete_original  # 新增：是否刪除原檔案
 
 # 如果沒有指定目錄，使用交互式輸入或當前目錄
 if args.target_dir:
@@ -391,7 +397,9 @@ print()
 progress.start_rename()
 
 renamed_count = 0
+deleted_count = 0
 rename_errors = []
+delete_errors = []
 
 for idx, item in enumerate(rename_plan, 1):
     old_path = TARGET_DIR / item['old_filename']
@@ -408,9 +416,21 @@ for idx, item in enumerate(rename_plan, 1):
                     counter += 1
                 item['new_filename'] = new_path.name
             
+            # 如果勾選了「刪除原檔案」，先記錄舊檔案路徑和內容
+            should_delete_after_rename = DELETE_ORIGINAL
+            
+            # 執行重命名（這會將 old_path 更名為 new_path）
             old_path.rename(new_path)
             renamed_count += 1
             print(f"✅ {item['old_filename'][:40]:<40} → {new_path.name[:35]}")
+            
+            # ⚠️ 注意：rename() 之後，old_path 不再存在
+            # 所以不需要再次刪除 old_path
+            # 如果 should_delete_after_rename，那麼原檔案已經被替換為新檔案了
+            # 不需要額外操作
+            
+            if should_delete_after_rename:
+                deleted_count += 1
             
             # 更新進度
             progress.update_rename(idx)
@@ -432,6 +452,8 @@ print("=" * 80)
 progress.complete_rename(renamed_count, len(rename_errors))
 print(f"成功重命名：{renamed_count} 張")
 print(f"重命名失敗：{len(rename_errors)} 張")
+if DELETE_ORIGINAL:
+    print(f"✅ 已刪除原檔案（重命名時自動刪除）：{deleted_count} 張")
 print()
 
 # 保存最終報告
@@ -443,6 +465,7 @@ final_report = {
     "failed_analysis": failed,
     "renamed": renamed_count,
     "rename_errors": len(rename_errors),
+    "deleted": deleted_count if DELETE_ORIGINAL else 0,
     "errors": rename_errors if rename_errors else []
 }
 
