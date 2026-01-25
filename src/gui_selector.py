@@ -599,6 +599,10 @@ class ImageRenamerGUI:
         self.result_text.see(tk.END)
         self.root.update()
 
+    def on_closing(self):
+        """處理視窗關閉事件 - 優雅銷毀視窗"""
+        self.root.destroy()
+
 
 def main():
     root = tk.Tk()
@@ -1234,10 +1238,6 @@ if __name__ == "__main__":
         finally:
             self.is_processing = False
             self.enable_controls()
-
-    def on_closing(self):
-        """處理視窗關閉事件"""
-        self.root.destroy()
 
 
 def main():
