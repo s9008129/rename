@@ -90,7 +90,7 @@ class ImageRenamerGUI:
         self.label_font = ("San Francisco", 14)
         self.button_font = ("San Francisco", 14, "bold")
         self.checkbox_font = ("San Francisco", 13)
-        self.help_font = ("San Francisco", 12, "regular")
+        self.help_font = ("San Francisco", 12)  # 移除無效的 "regular" 樣式
         self.text_font = ("Menlo", 12)
         self.mono_font = ("Monaco", 11)
         
