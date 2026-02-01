@@ -24,6 +24,7 @@ import time
 from datetime import datetime
 import argparse
 import sys
+import shutil
 
 # 導入進度追蹤器
 from progress_tracker import ProgressTracker
@@ -350,19 +351,29 @@ print("�� 生成重命名對照表...")
 rename_plan = []
 for result in analysis_results:
     if result['status'] == 'success':
-        old_name = result['filename']
+        old_name = result['filename']  # ✅ "B/001.png"（相對路徑）
         analysis = result['analysis']
         new_name = analysis.get('recommended_name', 'UNKNOWN')
         
-        # 確保新名稱有副檔名
+        # 獲取舊檔案的路徑資訊
         old_path = TARGET_DIR / old_name
         ext = old_path.suffix
+        
+        # ✅ 保留相對路徑的目錄前綴
+        old_dir = old_path.parent.relative_to(TARGET_DIR)
+        
         if not new_name.endswith(ext):
             new_name = new_name + ext
         
+        # ✅ 新檔名應該保留子資料夾路徑
+        if old_dir != Path("."):  # 不是根目錄
+            new_filename_with_path = str(old_dir / new_name)
+        else:
+            new_filename_with_path = new_name
+        
         rename_plan.append({
             "old_filename": old_name,
-            "new_filename": new_name,
+            "new_filename": new_filename_with_path,  # ✅ "B/2026年投資趨勢.png"
             "image_title": analysis.get('image_title', 'N/A'),
             "main_theme": analysis.get('main_theme', 'N/A'),
             "sub_theme": analysis.get('sub_theme', 'N/A'),
@@ -419,30 +430,31 @@ else:
         
         try:
             if old_path.exists():
+                # ✅ 確保新檔案的父目錄存在
+                new_path.parent.mkdir(parents=True, exist_ok=True)
+                
                 if new_path.exists() and new_path != old_path:
                     # 避免覆蓋現有檔案
-                    base, ext = new_path.name.rsplit('.', 1)
+                    base = new_path.stem
+                    ext = new_path.suffix
                     counter = 1
                     while new_path.exists():
-                        new_path = TARGET_DIR / f"{base}_{counter:02d}.{ext}"
+                        new_name = f"{base}_{counter:02d}{ext}"
+                        new_path = new_path.parent / new_name
                         counter += 1
-                    item['new_filename'] = new_path.name
+                    item['new_filename'] = str(new_path.relative_to(TARGET_DIR))
                 
-                # 如果勾選了「刪除原檔案」，先記錄舊檔案路徑和內容
-                should_delete_after_rename = DELETE_ORIGINAL
+                # ✅ 根據是否刪除原檔決定使用 copy 或 rename
+                if DELETE_ORIGINAL:
+                    # ✅ 如果勾選刪除：使用 rename（move）
+                    old_path.rename(new_path)
+                    deleted_count += 1
+                else:
+                    # ✅ 如果未勾選刪除：使用 copy（複製）
+                    shutil.copy2(old_path, new_path)
                 
-                # 執行重命名（這會將 old_path 更名為 new_path）
-                old_path.rename(new_path)
                 renamed_count += 1
                 print(f"✅ {item['old_filename'][:40]:<40} → {new_path.name[:35]}")
-                
-                # ⚠️ 注意：rename() 之後，old_path 不再存在
-                # 所以不需要再次刪除 old_path
-                # 如果 should_delete_after_rename，那麼原檔案已經被替換為新檔案了
-                # 不需要額外操作
-                
-                if should_delete_after_rename:
-                    deleted_count += 1
                 
                 # 計算並輸出進度百分比
                 progress_pct = int(renamed_count * 100 / len(rename_plan)) if rename_plan else 0

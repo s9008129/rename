@@ -2,17 +2,20 @@
 
 ## 📋 概述
 
-一個基於本地 Vision Model 的圖片視覺分析和智能命名系統。通過優先使用圖片中直接提取的標題，實現精準、清晰、可復用的圖片文件命名。
+一個基於本地 Vision Model 的圖片視覺分析和智慧命名系統。通過優先使用圖片中直接提取的標題，實現精準、清晰、可復用的圖片檔案命名。
 
-**最新版本**：v1.2.2（2026-01-25）- UI 優化版本 + 完整進度顯示 + macOS 設計  
+**最新版本**：v1.2.4（2026-02-01）- 關鍵 bug 修正 + 路徑保留 + 複製而非移動  
 **項目成果**：338 張圖片精準命名，品質評分 100 / 100，驗收標準達成 120%。  
 **規模測試**：✅ 2449 張 iPhone 備份照片支持，✅ 前 10 張照片驗證成功，✅ 實時進度顯示正常工作
 
-### v1.2.2 改進重點（2026-01-25）
+### v1.2.4 bug 修正重點（2026-02-01）
 
-| 改進項 | 說明 | 驗證狀態 |
+| 修正項 | 說明 | 驗證狀態 |
 |--------|------|--------|
-| 📊 **完整進度條** | GUI 進度條、百分比、ETA、當前步驟 | ✅ 驗證完畢 |
+| 🐛 **路徑保留邏輯** | 修正：重命名檔案現在保留在原子資料夾（不搬到父資料夾） | ✅ 已修正 |
+| 📋 **複製操作優化** | 修正：未勾選「刪除原檔案」時使用複製而非移動操作 | ✅ 已修正 |
+| 🗂️ **子資料夾結構** | 修正：確保子資料夾結構被正確保留 | ✅ 已修正 |
+| 🌐 **繁體中文規範** | 修正：所有大陸用語改為台灣用語（118 處） | ✅ 已修正 |
 | 🎨 **macOS 設計** | Apple Human Interface Guidelines、高對比度色彩 | ✅ 驗證完畢 |
 | ✅ **明確完成訊息** | 三層確認機制：進度條 + 日誌 + messagebox | ✅ 驗證完畢 |
 | 🛡️ **邏輯安全** | 邊界情況保護、ZeroDivisionError 避免 | ✅ 驗證完畢 |
@@ -25,7 +28,7 @@
 ### 問題
 - 圖片檔案名往往不夠描述性，難以快速識別內容
 - 手動命名效率低，容易出錯和重複
-- 沒有統一的命名標準，檔案難以組織和搜索
+- 沒有統一的命名標準，檔案難以組織和搜尋
 
 ### 解決方案
 1. **使用 Vision Model 進行深度分析**
@@ -76,25 +79,25 @@ dev/rename/
 │   └── copilot-instructions.md         # AI 協作指導原則
 ├── src/
 │   ├── full_batch_rename_execute.py    # 主要分析腳本（v1.2.2：進度百分比、完成訊息）
-│   ├── progress_tracker.py             # 進度追蹤模塊（v1.2 新增）
+│   ├── progress_tracker.py             # 進度追蹤模組（v1.2 新增）
 │   ├── gui_selector.py                 # GUI 介面（v1.2.1：實時進度、Popen）
-│   ├── file_tracker.py                 # 檔案追蹤模塊
+│   ├── file_tracker.py                 # 檔案追蹤模組
 │   ├── deduplicate_and_cleanup.py      # 重複清理腳本
-│   └── utilities.py                    # 工具函數
+│   └── utilities.py                    # 工具函式
 ├── config/
-│   ├── config.yaml                     # 配置參數（所有相對路徑）
-│   └── templates/                      # 配置模板
+│   ├── config.yaml                     # 組態參數（所有相對路徑）
+│   └── templates/                      # 組態模板
 ├── data/
 │   ├── session/                        # 執行會話（進度追蹤、報告）
 │   ├── tracking/                       # 全局檔案追蹤
 │   ├── analysis_results/               # 分析結果輸出
 │   └── samples/                        # 示例圖片和結果
 ├── docs/                            # 📌 v1.1.1 新增（集中文檔）
-│   ├── v1.1_智能文件追蹤功能說明.md  # v1.1 功能說明
+│   ├── v1.1_智慧檔案追蹤功能說明.md  # v1.1 功能說明
 │   ├── 04-smart-file-tracking-implementation.md  # 實現細節
 │   ├── 任務完成總結.txt              # 項目進度
 │   ├── 使用指南.md                  # 詳細使用指南
-│   ├── 項目文件結構說明.md            # 文件結構和自包含性
+│   ├── 項目檔案結構說明.md            # 檔案結構和自包含性
 │   └── ARCHITECTURE.md              # 技術架構（待實現）
 ├── tests/
 │   ├── test_analysis.py             # 分析測試（待實現）
@@ -107,9 +110,9 @@ dev/rename/
 │   └── run_image_rename.sh          # 完整版本
 ├── logs/
 │   └── *.log                        # 執行日誌（自動生成）
-├── environment.yml                  # Conda 環境配置
+├── environment.yml                  # Conda 環境組態
 ├── requirements.txt                 # Python 依賴
-├── README.md                        # 本文件
+├── README.md                        # 本檔案
 ├── QUICK_START.md                   # 快速開始指南
 ├── project_structure.txt            # 項目結構快照
 ├── .gitignore                       # Git 忽略規則
@@ -130,7 +133,7 @@ dev/rename/
 
 ### 🔧 修復和改進
 
-#### 1. 代碼錯誤修復
+#### 1. 程式碼錯誤修復
 - **問題**：`SESSION_DIR` 變數未定義，導致無法執行批量命名
 - **修復**：添加 `SESSION_DIR = DATA_DIR / "session"` 定義
 - **位置**：`src/full_batch_rename_execute.py` 第 33 行
@@ -143,7 +146,7 @@ dev/rename/
 - **按鈕字體**：10-12px → 13-14px（符合可訪問性標準）
 - **文本框字體**：9pt → 12pt（便於閱讀）
 - **內邊距（Padding）**：增加到 15-20px（符合現代 GUI 規範）
-- **行高和間距**：優化垂直間距，提高視覺舒適度
+- **行高和間距**：最佳化垂直間距，提高視覺舒適度
 
 **改進成果**：
 ✅ 字體清晰可讀  
@@ -243,13 +246,13 @@ bash scripts/interactive_rename.sh --force-rename
 - ✅ 逐步引導完成所有步驟
 - ✅ 支持指定任意資料夾
 - ✅ 支持選擇是否刪除原檔案
-- ✅ **智能檢測已命名 vs 未命名（v1.1 新增）**
+- ✅ **智慧檢測已命名 vs 未命名（v1.1 新增）**
 - ✅ **支持強制重新命名選項（v1.1 新增）**
 - ✅ 自動打開結果目錄
 
 **流程：**
 1. 輸入圖片資料夾路徑
-2. 系統智能檢測已命名和未命名的檔案
+2. 系統智慧檢測已命名和未命名的檔案
 3. 選擇是否刪除原檔案
 4. 確認設定並開始處理
 5. 完成！自動打開結果
@@ -324,7 +327,7 @@ python src/deduplicate_and_cleanup.py \
   --report data/analysis_results/cleanup_report.json
 ```
 
-### 使用配置檔案
+### 使用組態檔案
 
 ```bash
 python src/full_batch_rename_execute.py \
@@ -379,7 +382,7 @@ python src/full_batch_rename_execute.py \
 
 ---
 
-## 🔧 配置詳解
+## 🔧 組態詳解
 
 ### config.yaml 主要參數
 
@@ -442,7 +445,7 @@ naming:
 # 單元測試
 python -m pytest tests/test_analysis.py -v
 
-# 集成測試
+# 整合測試
 python -m pytest tests/ -v
 
 # 測試覆蓋率
@@ -485,14 +488,14 @@ cat data/analysis_results/verification.json | python -m json.tool
 [但檔案沒有被重命名]
 ```
 **原因**（v1.1.2 已修復）：
-- **根本原因**：代碼中 DOWNLOADS_DIR 變數未定義，導致 rename 階段失敗
+- **根本原因**：程式碼中 DOWNLOADS_DIR 變數未定義，導致 rename 階段失敗
 - **修復版本**：v1.1.2 及以上已修復為使用 TARGET_DIR
 - **驗證修復**：
   ```bash
   grep DOWNLOADS_DIR src/full_batch_rename_execute.py  # 應該無輸出
   ```
 - **手動修復**（v1.1.2 以前版本）：
-  1. 更新代碼到最新版本
+  1. 更新程式碼到最新版本
   2. 或手動編輯 `src/full_batch_rename_execute.py`
   3. 將第 321 和 369 行的 `DOWNLOADS_DIR` 改為 `TARGET_DIR`
 
@@ -529,7 +532,7 @@ cat data/analysis_results/verification.json | python -m json.tool
 
 ## 📚 進階使用
 
-### 自定義命名規則
+### 自訂命名規則
 
 編輯 `config/config.yaml`：
 ```yaml
@@ -537,7 +540,7 @@ naming:
   priority_field: "image_title"
   separator: "_"
   language: "zh-TW"
-  custom_prefix: "Images"  # 添加自定義前綴
+  custom_prefix: "Images"  # 添加自訂前綴
 ```
 
 ### 批量處理多個目錄
@@ -550,7 +553,7 @@ for dir in /path/to/images/*; do
 done
 ```
 
-### 生成自定義報告
+### 生成自訂報告
 
 ```python
 from src.utilities import generate_report
@@ -629,7 +632,7 @@ MIT License - 參見 LICENSE 檔案
 ### v1.1 (2026-01-23)
 - ✨ **增量模式**：跳過已命名的檔案（含中文字符檢測）
 - ✨ **強制重新命名**：`--force-rename` 參數支援
-- ✨ **全局檔案追蹤**：智能檔案追蹤機制
+- ✨ **全局檔案追蹤**：智慧檔案追蹤機制
 
 ---
 
